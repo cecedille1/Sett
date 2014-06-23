@@ -50,6 +50,7 @@ def remote_install(args, options):
     if options.remote_install.force:
         ssh_command.extend(['--no-deps', '--upgrade'])
     sh(ssh_command)
+    sh(['ssh', remote, '-C', 'rm', target])
 
 
 @task
