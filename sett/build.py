@@ -8,6 +8,8 @@ import os
 from StringIO import StringIO
 from tarfile import TarFile
 
+from pip.util import is_prerelease
+
 from paver.easy import task, call_task, path, no_help, consume_nargs, needs
 from paver.setuputils import setup
 
@@ -77,12 +79,7 @@ def make(options):
     """Overrides sdist to make sure that our setup.py is generated."""
     call_task('sdist')
 
-    is_prerelease = (
-        'a' in options.setup.version or
-        'b' in options.setup.version or
-        'rc' in options.setup.version
-    )
-    if not is_prerelease:
+    if not is_prerelease(options.setup.version):
         target = '{name}-{version}.tar.gz'.format(**options.setup)
         link = 'dist/{name}-latest.tar.gz'.format(**options.setup)
         path(link).unlink_p()
