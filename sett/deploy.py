@@ -12,7 +12,7 @@ from paver.easy import task, needs, sh, call_task, cmdopts, consume_nargs
 @consume_nargs(1)
 def scp(args, options):
     """Build and copy to a remote SSH"""
-    call_task('distutils.commands.sdist')
+    call_task('sdist')
     target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
 
     remote, = args
@@ -57,7 +57,7 @@ def remote_install(args, options):
 @needs(['setup_options'])
 def push():
     """Pushes the archive in the enix repo"""
-    call_task('distutils.commands.sdist')
+    call_task('sdist')
     call_task('upload', options={
         'repository': 'http://enixpi.enix.org',
     })
