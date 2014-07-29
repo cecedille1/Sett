@@ -55,6 +55,29 @@ def remote_install(args, options):
 
 @task
 @needs(['setup_options'])
+@cmdopts([
+    optparse.make_option('-f', '--force',
+                         action='store_true',
+                         default=False,
+                         help='Force the installation',
+                         ),
+])
+@consume_nargs(1)
+def local_install(args, options):
+    """Install the package in a virtual env present on the local filesystem"""
+    call_task('sdist')
+    target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
+    venv = args[0]
+
+    pip_install = [os.path.join(venv, 'bin', 'pip'), 'install', target]
+    if options.local_install.force:
+        pip_install.extend(['--no-deps', '--upgrade'])
+
+    sh(pip_install)
+
+
+@task
+@needs(['setup_options'])
 def push():
     """Pushes the archive in the enix repo"""
     call_task('sdist')
