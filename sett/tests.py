@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import optparse
-from paver.easy import task, needs, cmdopts, call_task, path, sh
+from paver.easy import task, needs, cmdopts, call_task, path, sh, options
 
 
 def _nosetests(options):
