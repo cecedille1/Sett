@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from paver.easy import task, path, consume_args
+from paver.easy import task, path, needs
 
 
 @task
-@consume_args
-def clean_pyc(args):
-    for dir in args:
-        for file in path(dir).walkfiles('*.pyc'):
+@needs(['setup_options'])
+def clean_pyc(options):
+    for dir in options.setup['packages']:
+        for file in path(dir).walkfiles('*.pyc', errors='ignore'):
             path(file).unlink()
