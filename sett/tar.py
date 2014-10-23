@@ -66,6 +66,12 @@ def install_remote_tar(args):
 @consume_nargs(3)
 def extract_from_tar(args):
     web_archive, filename, destination = args
+
+    path(destination).dirname().makedirs()
+
+    if destination.endswith('/'):
+        destination = os.path.join(destination, filename)
+
     with TarExtract(web_archive) as tf:
         for ti in tf.getmembers():
             if path(ti.name).basename() == filename:
@@ -74,9 +80,6 @@ def extract_from_tar(args):
             raise ValueError('No file "{0}" in the archive'.format(filename))
 
         file = tf.extractfile(ti)
-
-        path(destination).dirname().makedirs()
-
         info('Writing to {0}'.format(destination))
         with open(destination, 'wb') as dest:
             dest.write(file.read())
