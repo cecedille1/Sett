@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os.path
 import optparse
-from paver.easy import task, needs, cmdopts, call_task, path, sh, options
+from paver.easy import task, needs, cmdopts, call_task, path, sh, info
 
 
 def _nosetests(options):
@@ -102,11 +103,37 @@ def coverage(options):
 
 @task
 @needs(['setup_options'])
-def test_archive():
-    if path('archive-test').isdir():
-        path('archive-test').rmtree()
+@cmdopts([
+    optparse.make_option('-r', '--run',
+                         default='',
+                         help='Run a command after starting the virutal env'),
+    optparse.make_option('-i', '--pypi',
+                         default='',
+                         help='Custom Python Pacakge Index'),
+    optparse.make_option('-n', '--name',
+                         dest='virtualenv_name',
+                         default='test-venv',
+                         help='Selects the name of the virtualenv'),
+])
+def test_archive(options):
+    if not options.name:
+        raise RuntimeError()
+
+    destdir = path(options.test_archive.virtualenv_name)
+
+    if destdir.isdir():
+        destdir.rmtree()
 
     target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
-    sh(['virtualenv', '--python', 'python2', 'archive-test'])
-    sh(['archive-test/bin/pip', 'install', target, '-i', 'http://pi.enix.org/'])
-    sh(['archive-test/bin/napixd', 'only'])
+    sh(['virtualenv', '--python', 'python2', destdir])
+
+    command = [os.path.join(destdir, 'bin/pip'), 'install', target]
+    if options.pypi:
+        command.extend(['-i', options.pypi])
+
+    sh(command)
+
+    if options.run:
+        env_copy = dict(os.environ)
+        env_copy['PATH'] += ':{0}/bin/'.format(destdir)
+        sh(options.run, env=env_copy)
