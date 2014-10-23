@@ -9,3 +9,4 @@ from sett.quality import *
 from sett.tests import *
 from sett.deploy import *
 from sett.source import *
+from sett.tar import *
