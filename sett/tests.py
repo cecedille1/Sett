@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 import os.path
 import optparse
-from paver.easy import task, needs, cmdopts, call_task, path, sh, info
+from paver.easy import task, needs, cmdopts, call_task, path, sh
 
 
 def _nosetests(options):
@@ -23,7 +25,12 @@ def _nosetests(options):
     elif hasattr(options, 'test'):
         tests = options.test
     else:
-        tests = ['tests']
+        try:
+            import tests
+        except ImportError:
+            tests = []
+        else:
+            tests = ['tests']
 
     nosetest_options['tests'] = tests
     return nosetest_options
