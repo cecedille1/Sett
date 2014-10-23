@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 
 from StringIO import StringIO
 from tarfile import TarFile
 
-from paver.easy import task, path, consume_nargs
+from paver.easy import task, path, consume_nargs, info
 
 
 try:
@@ -28,7 +27,7 @@ class TarExtract(object):
         if '://' in self.web_archive:
             if requests is None:
                 raise ValueError('Missing required lib requests')
-            sys.stderr.write('Downloading from {0}\n'.format(self.web_archive))
+            info('Downloading from {0}'.format(self.web_archive))
             dl = requests.get(self.web_archive)
 
             self.tf = TarFile.open(path(self.web_archive).basename(),
@@ -64,9 +63,9 @@ def install_remote_tar(args):
 
 
 @task
-@consume_nargs(2)
+@consume_nargs(3)
 def extract_from_tar(args):
-    web_archive, filename = args
+    web_archive, filename, destination = args
     with TarExtract(web_archive) as tf:
         for ti in tf.getmembers():
             if path(ti.name).basename() == filename:
@@ -74,4 +73,10 @@ def extract_from_tar(args):
         else:
             raise ValueError('No file "{0}" in the archive'.format(filename))
 
-        return tf.extractfile(ti)
+        file = tf.extractfile(ti)
+
+        path(destination).dirname().makedirs()
+
+        info('Writing to {0}'.format(destination))
+        with open(destination, 'wb') as dest:
+            dest.write(file.read())
