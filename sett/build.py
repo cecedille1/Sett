@@ -4,7 +4,7 @@
 
 import sys
 
-from pip.util import is_prerelease
+from packaging.version import Version
 
 from paver.easy import task, call_task, path, no_help, needs
 from paver.setuputils import setup
@@ -35,7 +35,7 @@ def make(options):
     """Overrides sdist to make sure that our setup.py is generated."""
     call_task('sdist')
 
-    if not is_prerelease(options.setup.version):
+    if not Version(options.setup.version).is_prerelease:
         target = '{name}-{version}.tar.gz'.format(**options.setup)
         link = 'dist/{name}-latest.tar.gz'.format(**options.setup)
         path(link).unlink_p()
