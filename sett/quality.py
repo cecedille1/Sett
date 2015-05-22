@@ -13,7 +13,7 @@ from paver.easy import task, needs, cmdopts, sh
 def flake8(options):
     """Enforces PEP8"""
     out = getattr(options.flake8, 'output', '-')
-    flake8_command = ['flake8', '--max-line-length=120', '--exit-zero']
+    flake8_command = ['flake8', '--max-line-length=120']
     flake8_command.extend(package for package in options.setup['packages'] if '.' not in package)
     flake8_report = sh(flake8_command, capture=True)
 
