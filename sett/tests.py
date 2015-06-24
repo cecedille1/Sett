@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-
 import os.path
 import optparse
 from paver.easy import task, needs, cmdopts, call_task, path, sh
