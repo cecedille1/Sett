@@ -7,7 +7,7 @@ from setuptools import setup
 
 def find_version(filename):
     filepath = os.path.join(os.path.dirname(__file__), filename)
-    with open(filepath) as init:
+    with open(filepath, 'rU') as init:
         for line in init:
             if line.startswith('__version__'):
                 x, version = line.split('=', 1)
@@ -22,9 +22,9 @@ def parse_requirements(requirements_txt):
         with open(requirements_txt, 'rb') as f:
             for line in f:
                 line = line.strip()
-                if line.startswith('#') or not line:
+                if line.startswith(b'#') or not line:
                     continue
-                if line.startswith('-'):
+                if line.startswith(b'-'):
                     raise ValueError('Unexpected command {0} in {1}'.format(
                         line,
                         requirements_txt,

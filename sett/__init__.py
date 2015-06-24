@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-__version__ = '0.1.12'
+__version__ = '0.1.13'
 
 from sett.build import *
 from sett.jenkins import *

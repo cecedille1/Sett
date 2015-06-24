@@ -3,7 +3,7 @@
 
 import os
 
-from StringIO import StringIO
+from io import StringIO
 from tarfile import TarFile
 
 from paver.easy import task, path, consume_nargs, info
