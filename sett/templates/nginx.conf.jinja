@@ -1,0 +1,47 @@
+server {
+    listen       80;
+    server_name  {{ domain }}{% if other_domains %} {{ other_domains }}{% endif %};
+    charset      utf-8;
+    # To limit upload to 50Mb
+    #client_max_body_size 50M;
+
+    error_log  /var/log/nginx/{{ NAME }}_error_log;
+    access_log  /var/log/nginx/{{ NAME }}_access_log;
+
+    {% if options.FORCE_REWRITE|as_bool %}
+    if ($host !~* ^{{ domain|replace(".","\.") }}) {
+        rewrite ^/(.*)     $scheme://{{ domain }}/$1 permanent;
+    }
+
+    {% endif %}
+    location /media {
+        alias {{ ROOT }}/project/media;
+    }
+
+    location /static {
+        root {{ ROOT }};
+    }
+
+    #location /sitemap.xml {
+    #    alias {{ ROOT }}/project/media/uploads/sitemap/sitemap.xml;
+    #}
+
+    #location /protected_medias{
+    #    internal;
+    #    alias {{ ROOT }}/project/protected_medias;
+    #}
+
+    location /admin {
+        include                 /etc/nginx/uwsgi_params;
+        uwsgi_pass              unix:{{ uwsgi.socket }};
+        client_max_body_size 350m;
+        uwsgi_read_timeout 600;
+    }
+
+    root {{ ROOT }}/var/www;
+    try_files $uri @uwsgi;
+    location @uwsgi {
+        include                 /etc/nginx/uwsgi_params;
+        uwsgi_pass              unix:{{ uwsgi.socket }};
+    }
+}

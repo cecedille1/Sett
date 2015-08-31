@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from paver.easy import task, needs, cmdopts, sh, path
+
+from paver.easy import task, needs, cmdopts, sh
+from sett.pip import VENV_BIN
 
 
 @task
@@ -13,7 +15,7 @@ from paver.easy import task, needs, cmdopts, sh, path
 def flake8(options):
     """Enforces PEP8"""
     out = getattr(options.flake8, 'output', '-')
-    flake8_bin = path(sys.executable).dirname().joinpath('flake8')
+    flake8_bin = VENV_BIN.joinpath('flake8')
     flake8_command = [flake8_bin, '--max-line-length=120']
     flake8_command.extend(package for package in options.setup['packages'] if '.' not in package)
     flake8_report = sh(flake8_command, capture=True)

@@ -9,11 +9,13 @@ from packaging.version import Version
 from paver.easy import task, call_task, path, no_help, needs
 from paver.setuputils import setup
 
+from sett.paths import ROOT
+
 
 try:
     from setup import build_info
 except ImportError:
-    sys.path.append('.')
+    sys.path.append(ROOT)
     from setup import build_info
 
 

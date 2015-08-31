@@ -1,0 +1,9 @@
+check process {{ NAME }} with pidfile {{ uwsgi.pidfile }}
+   start program = "{{ ctl }} start"
+                    as uid {{ UID }} and gid {{ GID }}
+   stop  program = "{{ ctl}} stop"
+                    as uid {{ UID }} and gid {{ GID }}
+   group {{ monit.mgroup }}
+   mode {{ monit.mmode }}
+   if failed unixsocket {{ uwsgi.socket }} type TCP then restart
+   if 5 restarts within 5 cycles then timeout

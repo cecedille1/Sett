@@ -1,79 +1,48 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+import getpass
 import os
-import optparse
+import grp
 
-from paver.easy import task, needs, sh, call_task, cmdopts, consume_nargs
+from paver.easy import path, task, call_task, needs, consume_nargs, info, no_help, environment
+
+from sett import uwsgi
+from sett.paths import ROOT
+from sett.utils import optional_import
+
+jinja2 = optional_import('jinja2')
+
+templates_dir = path(__file__).dirname().joinpath('templates')
 
 
 @task
+@no_help
 @needs(['setup_options'])
-@consume_nargs(1)
-def scp(args, options):
-    """Build and copy to a remote SSH"""
-    call_task('sdist')
-    target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
-
-    remote, = args
-    if ':' not in remote:
-        remote += ':'
-    sh(['scp', target, remote])
-
-
-@task
-@needs('scp')
-@consume_nargs(1)
-@cmdopts([
-    optparse.make_option('-V', '--venv',
-                         default='venv',
-                         help='virtual env on the remote host',
-                         ),
-    optparse.make_option('-f', '--force',
-                         action='store_true',
-                         default=False,
-                         help='Force the installation',
-                         ),
-])
-def remote_install(args, options):
-    """Build, copy to a remote SSH and install in the given venv"""
-
-    remote = args[0]
-    venv = options.remote_install.venv
-
-    target = '{name}-{version}.tar.gz'.format(**options.setup)
-    ssh_command = [
-        'ssh', remote,
-        '-C',
-        os.path.join(venv, 'bin', 'pip'), 'install', target,
-    ]
-    if options.remote_install.force:
-        ssh_command.extend(['--no-deps', '--upgrade'])
-    sh(ssh_command)
-    sh(['ssh', remote, '-C', 'rm', target])
-
-
-@task
-@needs(['setup_options'])
-@cmdopts([
-    optparse.make_option('-f', '--force',
-                         action='store_true',
-                         default=False,
-                         help='Force the installation',
-                         ),
-])
-@consume_nargs(1)
-def local_install(args, options):
-    """Install the package in a virtual env present on the local filesystem"""
-    call_task('sdist')
-    target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
-    venv = args[0]
-
-    pip_install = [os.path.join(venv, 'bin', 'pip'), 'install', target]
-    if options.local_install.force:
-        pip_install.extend(['--no-deps', '--upgrade'])
-
-    sh(pip_install)
+def build_context():
+    name = environment.options.setup.name.lower()
+    context = {
+        'uwsgi': {
+            'pidfile': uwsgi.PIDFILE,
+            'socket': uwsgi.SOCKET,
+            'config': uwsgi.CONFIG,
+        },
+        'ctl': '{} daemon'.format(path(sys.argv[0]).abspath()),
+        'domain': 'dev.{}.emencia.net'.format(name),
+        'monit': {
+            'mgroup': 'apps',
+            'mmode': 'active',
+        },
+        'ROOT': ROOT,
+        'NAME': name,
+        'UID': getpass.getuser(),
+        'GID': grp.getgrgid(os.getgid()).gr_name,
+        'options': {
+            'FORCE_REWRITE': False,
+        }
+    }
+    environment.template_context = context
 
 
 @task
@@ -84,3 +53,59 @@ def push():
     call_task('upload', options={
         'repository': 'http://enixpi.enix.org',
     })
+
+
+@task
+def etc():
+    """
+    Make the etc directory with the conf files
+    """
+    call_task('nginx_conf')
+    call_task('monit_conf')
+    call_task('uwsgi_xml')
+
+
+@task
+def nginx_conf():
+    """
+    Generates etc/nginx.conf
+    """
+    call_task('render_template', args=['nginx.conf.jinja', 'etc/nginx.conf'])
+
+
+@task
+def monit_conf():
+    """
+    Generates etc/monit.conf
+    """
+    call_task('render_template', args=['monit.conf.jinja', 'etc/monit.conf'])
+
+
+@task
+@consume_nargs(2)
+@needs(['build_context'])
+def render_template(args):
+    """
+    Render a jinja2 template into a file
+    """
+    template, destination_path = args
+
+    destination_path = ROOT.joinpath(destination_path)
+    destination_path.dirname().makedirs()
+
+    template = _get_template(template)
+    rendered = template.render(environment.template_context)
+    info('Writing %s', destination_path)
+    with open(destination_path, 'w') as destination:
+        destination.write(rendered)
+
+
+def _get_template(template_name):
+    jinja = jinja2.Environment(
+        loader=jinja2.FileSystemLoader([
+            ROOT.joinpath('templates'),
+            templates_dir,
+        ]),
+    )
+    jinja.filters['as_bool'] = lambda x: x if x != 'false' else False
+    return jinja.get_template(template_name)

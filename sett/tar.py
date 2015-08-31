@@ -8,11 +8,9 @@ from tarfile import TarFile
 
 from paver.easy import task, path, consume_nargs, info
 
+from sett.utils import optional_import
 
-try:
-    import requests
-except ImportError as e:
-    requests = None
+requests = optional_import('requests')
 
 
 class TarExtract(object):
@@ -25,8 +23,6 @@ class TarExtract(object):
             raise ValueError('Cannot re-enter')
 
         if '://' in self.web_archive:
-            if requests is None:
-                raise ValueError('Missing required lib requests')
             info('Downloading from {0}'.format(self.web_archive))
             dl = requests.get(self.web_archive)
 

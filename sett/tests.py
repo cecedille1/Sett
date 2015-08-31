@@ -4,7 +4,9 @@
 
 import os.path
 import optparse
+
 from paver.easy import task, needs, cmdopts, call_task, path, sh
+from sett.bin import which
 
 
 def _nosetests(options):
@@ -131,9 +133,9 @@ def test_archive(options):
         destdir.rmtree()
 
     target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
-    sh(['virtualenv', '--python', 'python2', destdir])
+    sh([which.virtualenv, '--python', 'python2', destdir])
 
-    command = [os.path.join(destdir, 'bin/pip'), 'install', target]
+    command = [destdir.joinpath('bin/pip'), 'install', target]
     if options.pypi:
         command.extend(['-i', options.pypi])
 
@@ -141,5 +143,5 @@ def test_archive(options):
 
     if options.run:
         env_copy = dict(os.environ)
-        env_copy['PATH'] += ':{0}/bin/'.format(destdir)
+        env_copy['PATH'] += ':{0}'.format(destdir.joinpath('bin'))
         sh(options.run, env=env_copy)
