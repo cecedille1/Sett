@@ -5,8 +5,9 @@ import sys
 import getpass
 import os
 import grp
+import optparse
 
-from paver.easy import path, task, call_task, needs, consume_nargs, info, no_help, environment
+from paver.easy import path, task, call_task, needs, consume_nargs, info, no_help, environment, cmdopts
 
 from sett import uwsgi
 from sett.paths import ROOT
@@ -47,11 +48,16 @@ def build_context():
 
 @task
 @needs(['setup_options'])
-def push():
+@cmdopts([
+    optparse.make_option('-r', '--repo',
+                         default='http://enixpi.enix.org',
+                         ),
+])
+def push(options):
     """Pushes the archive in the enix repo"""
     call_task('sdist')
     call_task('upload', options={
-        'repository': 'http://enixpi.enix.org',
+        'repository': options.repo,
     })
 
 
