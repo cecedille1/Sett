@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 from paver.tasks import environment, Task
 
 from sett.npm import *

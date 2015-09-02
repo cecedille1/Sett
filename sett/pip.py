@@ -3,9 +3,8 @@
 
 
 import sys
-import optparse
 
-from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, info, cmdopts
+from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, info
 
 
 VENV_BIN = path(sys.executable).dirname()
@@ -26,19 +25,11 @@ def pip(args):
 
 @task
 @consume_args
-@cmdopts([
-    optparse.make_option('-c', '--cert'),
-])
 def pip_install(args, options):
     """Install a pip package"""
     command = [
         'install',
     ]
-    if options.cert:
-        command.extend([
-            '--cert',
-            options.cert,
-        ])
     command.extend(args)
     call_task('pip', args=command)
 
