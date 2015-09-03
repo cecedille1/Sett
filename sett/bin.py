@@ -70,11 +70,7 @@ class Which(object):
 
 
 def default_searchers():
-
     searchers = []
-    if os.environ.get('PATH'):
-        searchers.append(DirectoriesSearcher(os.environ['PATH'].split(':')))
-
     from sett.pip import VENV_BIN
     if VENV_BIN.exists():
         searchers.append(DirectorySearcher(VENV_BIN))
@@ -83,6 +79,24 @@ def default_searchers():
     if NODE_MODULES.exists():
         searchers.append(NodeModulesSearcher(NODE_MODULES))
 
+    from sett.gem import GEM_HOME
+    if GEM_HOME.exists():
+        searchers.append(DirectorySearcher(GEM_HOME))
+
+    if os.environ.get('PATH'):
+        searchers.append(DirectoriesSearcher(os.environ['PATH'].split(':')))
+
     return searchers
 
-which = Which(default_searchers())
+
+class LazyWhich(object):
+    def __init__(self, searchers_provider):
+        self.sp = searchers_provider
+
+    def __getattr__(self, attr):
+        if '_which' not in self.__dict__:
+            self._which = Which(self.sp())
+        return getattr(self._which, attr)
+
+
+which = LazyWhich(default_searchers)
