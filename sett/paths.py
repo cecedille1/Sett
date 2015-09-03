@@ -4,5 +4,9 @@
 from paver.easy import environment, path
 
 
-ROOT = path.getcwd().joinpath(environment.pavement.__file__).dirname()
+if environment.pavement:
+    ROOT = path.getcwd().joinpath(environment.pavement.__file__).dirname()
+else:
+    ROOT = path.getcwd()
+
 LOGS = ROOT.joinpath('var/log')
