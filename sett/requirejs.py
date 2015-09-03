@@ -17,6 +17,7 @@ from sett.npm import NODE_MODULES
 def rjs(args, options):
     """Usage: rjs APP [APP...]
 Compile a requirejs app.
+
 rjs requires npm apps almond and requirejs.
 For an app `x`: the url `/STATIC_ROOT/js/x.js` points to a JS file that loads a
 bootstrap. It requires `/STATIC_ROOT/js/config.js` and

@@ -2,33 +2,34 @@
 # -*- coding: utf-8 -*-
 
 import subprocess
-from paver.easy import debug, task, consume_nargs, call_task, info
+from paver.easy import debug, task, consume_args, call_task, info, environment
 
 from sett.paths import ROOT
 from sett.gem import GEM_HOME
+from sett.bin import which
 
 
-def run_compass(command, background=False):
-    command = [
-        GEM_HOME.joinpath('bin/compass'),
-        command,
-        ROOT.joinpath('compass'),
-    ]
+def run_compass(*commands, **kw):
+    command = [which.compass]
+    command.extend(commands)
+    command.append(ROOT.joinpath(getattr(environment, 'compass_root', 'compass')))
+
     info('Running: %s', ' '.join(command))
     compass = subprocess.Popen(command, env={
         'GEM_HOME': GEM_HOME,
     })
-    if not background:
+    if not kw.get('background', False):
         rc = compass.wait()
         debug('compass returned %s', rc)
     return compass
 
 
 @task
-@consume_nargs(1)
+@consume_args
 def compass(args, options):
-    """Run a compass command"""
-    run_compass(args[0])
+    """Run a compass command. The root of the compass environment is the value
+    of paver.environment.compass_root and defaults to ROOT/compass"""
+    run_compass(*args)
 
 
 @task
