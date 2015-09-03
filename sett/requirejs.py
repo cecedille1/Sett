@@ -5,7 +5,7 @@
 import tempfile
 import subprocess
 
-from paver.easy import task, no_help, consume_nargs, call_task, info, needs, path, cmdopts
+from paver.easy import task, no_help, consume_args, consume_nargs, call_task, info, needs, path, environment
 
 from sett.paths import ROOT
 from sett.bin import which
@@ -13,31 +13,32 @@ from sett.npm import NODE_MODULES
 
 
 @task
-@consume_nargs(1)
-@cmdopts([
-    ('output=', 'o', 'Target of the output'),
-])
+@consume_args
 def rjs(args, options):
-    """Compile a requirejs app.
+    """Usage: rjs APP [APP...]
+Compile a requirejs app.
 rjs requires npm apps almond and requirejs.
-For an app `x`: the url `/STATIC_ROOT/js/x.js` loads a bootstrap that requires
-`/STATIC_ROOT/js/config.js` and `/STATIC_ROOT/js/app/x.js`. The rjs optimizer
-will optimize app/x.js and write the output in `OUTPUT/js/x.js`.
+For an app `x`: the url `/STATIC_ROOT/js/x.js` points to a JS file that loads a
+bootstrap. It requires `/STATIC_ROOT/js/config.js` and
+`/STATIC_ROOT/js/app/x.js`. The rjs optimizer will optimize app/x and write the
+output in `OUTPUT/x.js`.
 
-If the settings has a value STATICFILES_DIRS_DEV, it will be appended to the
-STATICFILES_DIRS setting before loading files.
+OUTPUT is the value of 'paver.environment.requirejs_output_directory' and
+defaults to 'ROOT/build/static/js/'.
+
+If the django settings have a value STATICFILES_DIRS_DEV, it will be appended
+to the STATICFILES_DIRS setting before loading files.
     """
-    name, = args
-    outdir = getattr(options, 'output', 'javascripts')
-
-    out = ROOT.joinpath(outdir, 'static/js', name + '.js')
-
     tempdir = path(tempfile.mkdtemp())
+    outdir = ROOT.joinpath(getattr(environment, 'requirejs_output_directory', 'build/static/js'))
+
     try:
         source = tempdir.joinpath('js')
-
         call_task('virtual_static', args=[tempdir])
-        call_task('rjs_build', args=['app/' + name, source, out])
+
+        for name in args:
+            out = ROOT.joinpath(outdir, name + '.js')
+            call_task('rjs_build', args=['app/' + name, source, out])
     finally:
         tempdir.rmtree()
 
@@ -58,7 +59,7 @@ def virtual_static(args):
 
     with override_settings(STATIC_ROOT=tempdir):
         with modify_settings(STATICFILES_DIRS={
-            'append': getattr(settings, 'STATICFILES_DIRS_DEV'),
+            'append': getattr(settings, 'STATICFILES_DIRS_DEV', []),
         }):
             call_task('django', args=args)
 
