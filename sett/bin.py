@@ -19,6 +19,9 @@ class DirectorySearcher(object):
             return bin_path
         return None
 
+    def __repr__(self):
+        return '<DS {}>'.format(self.directory)
+
 
 class DirectoriesSearcher(object):
     def __init__(self, directories):
@@ -29,6 +32,9 @@ class DirectoriesSearcher(object):
             prog = directory.search(program)
             if prog:
                 return prog
+
+    def __repr__(self):
+        return '<DS {}>'.format(', '.join(d.directory for d in self.directories))
 
 
 class NodeModulesSearcher(object):
@@ -44,11 +50,17 @@ class NodeModulesSearcher(object):
         return (directory.joinpath('bin', program)
                 for directory in self.directory.listdir())
 
+    def __repr__(self):
+        return '<NMS {}>'.format(self.directory)
+
 
 class Which(object):
     def __init__(self, searchers):
         self.searchers = searchers
         self._cache = {}
+
+    def __repr__(self):
+        return '<W {}>'.format(', '.join(repr(s) for s in self.searchers))
 
     def __getattr__(self, program):
         return self.search(program)
@@ -81,7 +93,7 @@ def default_searchers():
 
     from sett.gem import GEM_HOME
     if GEM_HOME.exists():
-        searchers.append(DirectorySearcher(GEM_HOME))
+        searchers.append(DirectorySearcher(GEM_HOME.joinpath('bin')))
 
     if os.environ.get('PATH'):
         searchers.append(DirectoriesSearcher(os.environ['PATH'].split(':')))
@@ -97,6 +109,9 @@ class LazyWhich(object):
         if '_which' not in self.__dict__:
             self._which = Which(self.sp())
         return getattr(self._which, attr)
+
+    def __repr__(self):
+        return self.__getattr__('__repr__')()
 
 
 which = LazyWhich(default_searchers)
