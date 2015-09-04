@@ -5,7 +5,8 @@
 import tempfile
 import subprocess
 
-from paver.easy import task, no_help, consume_args, consume_nargs, call_task, info, needs, path, environment
+from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
+                        info, needs, path, environment, debug)
 
 from sett.paths import ROOT
 from sett.bin import which
@@ -36,6 +37,18 @@ to the STATICFILES_DIRS setting before loading files.
     try:
         source = tempdir.joinpath('js')
         call_task('virtual_static', args=[tempdir])
+
+        if not args:
+            # Auto discover
+            args = []
+            info('Auto discovering JS apps')
+            for dir in path(tempdir).walkdirs('app'):
+                args.extend(dir.files('*.js'))
+            debug('Autodicovered: %s', args)
+
+        if not args:
+            info('No file to optimize')
+            return
 
         for name in args:
             out = ROOT.joinpath(outdir, name + '.js')
