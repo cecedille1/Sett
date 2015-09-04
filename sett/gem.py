@@ -14,8 +14,6 @@ from sett.utils import BaseInstalledPackages
 gem_home = os.environ.get('GEM_HOME')
 if gem_home is None:
     GEM_HOME = ROOT.joinpath('gem')
-elif gem_home.startswith('/'):
-    GEM_HOME = path(gem_home)
 else:
     GEM_HOME = ROOT.joinpath(gem_home)
 
