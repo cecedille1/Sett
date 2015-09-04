@@ -90,7 +90,7 @@ def django(args):
 @consume_nargs(1)
 def start_app(args):
     name = args[0]
-    call_task('django', args=['start_app', name, ROOT])
+    call_task('django', args=['startapp', name])
     call_task('add_installed_app', args=[name])
 
 
