@@ -4,7 +4,7 @@
 import os
 import subprocess
 
-from paver.easy import task, consume_args, call_task, debug, sh, might_call, path
+from paver.easy import task, consume_args, call_task, debug, sh, might_call
 
 from sett.paths import ROOT
 from sett.bin import which
