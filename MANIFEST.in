@@ -2,3 +2,4 @@ include README.rst
 include requirements.txt
 include setup.py
 exclude pavement.py
+recursive-include sett/templates *.jinja
