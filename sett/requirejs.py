@@ -43,7 +43,7 @@ to the STATICFILES_DIRS setting before loading files.
             args = []
             info('Auto discovering JS apps')
             for dir in path(tempdir).walkdirs('app'):
-                args.extend(dir.files('*.js'))
+                args.extend(x.namebase for x in dir.files('*.js'))
             debug('Autodicovered: %s', args)
 
         if not args:
