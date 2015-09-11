@@ -3,34 +3,33 @@
 # flake8: noqa
 
 __version__ = '0.3.3'
+
+import os
+import importlib
+
+from paver.path import path
 from paver.tasks import environment, Task
 
-from sett.npm import *
-from sett.build import *
-from sett.jenkins import *
-from sett.quality import *
-from sett.tests import *
-from sett.deploy import *
-from sett.source import *
-from sett.tar import *
-from sett.gem import *
-from sett.compass import *
-from sett.django import *
-from sett.pip import *
-from sett.bower import *
-from sett.uwsgi import *
-from sett.docker import *
-from sett.install import *
-from sett.remote import *
-from sett.requirejs import *
+ALL_LIBS = [p.namebase for p in path(__file__).dirname().files('*.py')]
+DISABLED_LIBS = set(os.environ.get('SETT_DISABLED_LIBS', '').split())
+ENABLED_LIBS = set(os.environ.get('SETT_ENABLED_LIBS', '').split())
 
 
 class SettTaskFinder(object):
-    def __init__(self):
-        pass
+    def _load(self):
+        enabled_libs = ENABLED_LIBS or ALL_LIBS
+        for enabled_lib in enabled_libs:
+            if enabled_lib in DISABLED_LIBS:
+                continue
+            try:
+                module = importlib.import_module('sett.' + enabled_lib)
+                for var in vars(module).values():
+                    yield var
+            except ImportError:
+                pass
 
     def get_tasks(self):
-        for item in globals().values():
+        for item in self._load():
             if isinstance(item, Task):
                 yield item
 
