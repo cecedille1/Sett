@@ -12,16 +12,14 @@ from paver.setuputils import setup
 from sett.paths import ROOT
 
 
-try:
-    from setup import build_info
-except ImportError:
-    sys.path.append(ROOT)
-    from setup import build_info
-
-
 @task
 @no_help
 def setup_options(options):
+    try:
+        from setup import build_info
+    except ImportError:
+        sys.path.append(ROOT)
+        from setup import build_info
     setup(**build_info)
 
 
