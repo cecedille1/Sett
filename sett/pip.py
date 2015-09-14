@@ -5,10 +5,14 @@
 import sys
 
 from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, info
+from sett import ROOT, defaults
 
 
 VENV_BIN = path(sys.executable).dirname()
 VENV_DIR = VENV_BIN.dirname()
+
+
+REQUIREMENTS = ROOT.joinpath(defaults.REQUIREMENTS)
 
 
 @task
@@ -16,28 +20,20 @@ VENV_DIR = VENV_BIN.dirname()
 def pip(args):
     """Run a pip command"""
     pip_bin = VENV_BIN.joinpath('pip')
-    command = [
-        pip_bin,
-    ]
-    command.extend(args)
-    sh(command)
+    sh([pip_bin] + args)
 
 
 @task
 @consume_args
 def pip_install(args, options):
     """Install a pip package"""
-    command = [
-        'install',
-    ]
-    command.extend(args)
-    call_task('pip', args=command)
+    call_task('pip', args=['install'] + args)
 
 
 @task
 def pip_setup():
     """Install the requirements.txt"""
-    call_task('pip_install', args=['-r', 'requirements.txt'])
+    call_task('pip_install', args=['-r', REQUIREMENTS])
 
 
 @task
@@ -48,5 +44,5 @@ def pip_req(args):
     call_task('pip_install', [package])
 
     info('Adding %s to requirements.txt', package)
-    with open('requirements.txt', 'a') as req_txt:
+    with open(REQUIREMENTS, 'a') as req_txt:
         req_txt.write('{}\n'.format(package))

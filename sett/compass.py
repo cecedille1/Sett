@@ -4,15 +4,14 @@
 import subprocess
 from paver.easy import debug, task, consume_args, call_task, info, environment
 
-from sett.paths import ROOT
+from sett import ROOT, which, defaults
 from sett.gem import GEM_HOME
-from sett.bin import which
 
 
 def run_compass(*commands, **kw):
     command = [which.compass]
     command.extend(commands)
-    command.append(ROOT.joinpath(getattr(environment, 'compass_root', 'compass')))
+    command.append(ROOT.joinpath(getattr(environment, 'compass_root', defaults.COMPASS_DIR)))
 
     info('Running: %s', ' '.join(command))
     compass = subprocess.Popen(command, env={

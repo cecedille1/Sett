@@ -2,10 +2,20 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-__version__ = '0.3.3'
+__version__ = '0.4.0'
+
+__all__ = [
+    'SettTaskFinder',
+    'which',
+    'optional_import',
+]
 
 import os
 import importlib
+
+from sett.bin import which
+from sett.utils import optional_import
+from sett.paths import ROOT
 
 from paver.path import path
 from paver.tasks import environment, Task

@@ -6,14 +6,13 @@ import subprocess
 
 from paver.easy import task, consume_args, call_task, debug, sh, might_call
 
-from sett.paths import ROOT
-from sett.bin import which
+from sett import defaults, which, ROOT
 from sett.utils import BaseInstalledPackages
 
 
 gem_home = os.environ.get('GEM_HOME')
 if gem_home is None:
-    GEM_HOME = ROOT.joinpath('gem')
+    GEM_HOME = ROOT.joinpath(defaults.GEM_HOME)
 else:
     GEM_HOME = ROOT.joinpath(gem_home)
 
@@ -45,18 +44,29 @@ installed_gems = InstalledGems()
 
 @task
 @consume_args
+def ruby(args):
+    sh([which.ruby] + args, env={
+        'GEM_HOME': GEM_HOME
+    })
+
+
+@task
+@consume_args
+def gem(args):
+    sh([which.gem] + args)
+
+
+@task
+@consume_args
 def gem_install(args):
     """Install a gem"""
-    gem_command = [
-        which.gem,
+    call_task('gem', [
         'install',
         '--no-user-install',
         '--install-dir', GEM_HOME,
         '--no-ri',
         '--no-rdoc',
-    ]
-    gem_command.extend(args)
-    sh(gem_command)
+    ] + args)
 
 
 @task

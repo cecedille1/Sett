@@ -2,11 +2,30 @@
 # -*- coding: utf-8 -*-
 
 
-import os.path
+import sys
+import os
 import optparse
+import importlib
 
 from paver.easy import task, needs, cmdopts, call_task, path, sh
-from sett.bin import which
+from sett import which, defaults
+
+
+class TestsNameGenerator(object):
+    def __init__(self, root, strategy, prefix):
+        self.prefix = prefix
+        if root:
+            self.root = [root]
+        else:
+            self.root = []
+
+        if strategy == 'ignore-first':
+            self.start = 1
+        else:
+            self.start = 0
+
+    def __call__(self, package_name):
+        return '.'.join(self.root + [self.prefix + test for test in package_name.split('.')[self.start:]])
 
 
 def _nosetests(options):
@@ -20,18 +39,23 @@ def _nosetests(options):
         })
 
     if hasattr(options, 'auto'):
-        tests = [
-            ('tests.' + '.'.join('test_{0}'.format(test) for test in auto.split('.')[1:]))
-            for auto in options.auto]
+        generator = TestsNameGenerator(defaults.TESTS_ROOT,
+                                       defaults.TESTS_NAMING,
+                                       defaults.TESTS_FILE_PREFIX)
+        tests = [generator(name) for name in options.auto]
     elif hasattr(options, 'test'):
         tests = options.test
-    else:
+    elif defaults.TESTS_ROOT:
         try:
-            import tests
+            importlib.import_module(defaults.TESTS_ROOT)
         except ImportError:
-            tests = []
-        else:
-            tests = ['tests']
+            raise RuntimeError('Cannot import the tests, does a package named {} exists?'.format(
+                defaults.TESTS_ROOT,
+            ))
+
+        tests = [defaults.TESTS_ROOT]
+    else:
+        tests = []
 
     nosetest_options['tests'] = tests
     return nosetest_options
@@ -116,7 +140,7 @@ def coverage(options):
                          default='',
                          help='Run a command after starting the virutal env'),
     optparse.make_option('-i', '--pypi',
-                         default='',
+                         default=defaults.PYPI_PACKAGE_INDEX,
                          help='Custom Python Pacakge Index'),
     optparse.make_option('-n', '--name',
                          dest='virtualenv_name',
@@ -133,7 +157,7 @@ def test_archive(options):
         destdir.rmtree()
 
     target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
-    sh([which.virtualenv, '--python', 'python2', destdir])
+    sh([which.virtualenv, '--python', sys.executable, destdir])
 
     command = [destdir.joinpath('bin/pip'), 'install', target]
     if options.pypi:

@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import sys
+import os
 import re
 import itertools
 import subprocess
@@ -13,8 +14,7 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path,
                         environment)
 
-from sett.paths import ROOT
-from sett.bin import which
+from sett import ROOT, which, defaults
 
 
 @task
@@ -94,18 +94,35 @@ def start_app(args):
     call_task('add_installed_app', args=[name])
 
 
+def _guess_settings():
+    if hasattr(environment, 'django_settings_file'):
+        return environment.django_settings_file
+
+    if os.environ.get('DJANGO_SETTINGS_MODULE'):
+        import importlib
+        settings = importlib.import_module(os.environ['DJANGO_SETTINGS_MODULE'])
+        candidate = settings.__file__
+        if candidate.endswith('.pyc'):
+            candidate = candidate.rstrip('c')
+
+        debug('Guessed %s as settings file', candidate)
+        return candidate
+
+    raise RuntimeError('No settings file found, set DJANGO_SETTINGS_MODULE')
+
+
 @task
 @consume_nargs(1)
 @needs('django_settings')
 def add_installed_app(args):
-    name = args[0]
+    name, = args
 
     from django.conf import settings
     if name in settings.INSTALLED_APPS:
         info('App %s is already in INSTALLED_APPS', name)
         return
 
-    settings_path = ROOT.joinpath('magellan', 'settings.py')
+    settings_path = _guess_settings()
     debug('Install app in %s', settings_path)
 
     with open(settings_path, 'r+') as settings:
@@ -175,13 +192,5 @@ def statics():
     """
     Collect the static files
     """
-    ignore_list = [
-        'config.rb',
-        '*.scss',
-    ]
-
     args = ['collectstatic', '--noinput']
-    for ignore in ignore_list:
-        args.extend(['-i', ignore])
-
     call_task('django', args=args)

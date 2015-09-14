@@ -8,8 +8,8 @@ from xml.etree import ElementTree as ET
 
 from paver.easy import task, sh, needs, consume_nargs, call_task, info, environment
 
-from sett.bin import which
-from sett.paths import ROOT, LOGS
+from sett import which, ROOT
+from sett.paths import LOGS
 from sett.pip import VENV_DIR
 
 UWSGI_PATH = ROOT.joinpath('var')
@@ -96,7 +96,7 @@ def uwsgi_xml():
     context = environment.template_context
     config = {
         'pidfile': PIDFILE,
-        'daemonize': LOGS,
+        'daemonize': LOGS.joinpath('uwsgi.log'):,
         'socket': SOCKET,
         'chmod-socket': '660',
         'processes': '1',

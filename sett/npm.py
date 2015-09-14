@@ -6,13 +6,10 @@ import json
 
 from paver.easy import debug, task, consume_args, call_task, sh, might_call
 
-
-from sett.paths import ROOT
-NODE_MODULES = ROOT.joinpath('node_modules')
-
-
-from sett.bin import which
+from sett import which, ROOT
 from sett.utils import BaseInstalledPackages
+
+NODE_MODULES = ROOT.joinpath('node_modules')
 
 
 class InstalledPackages(BaseInstalledPackages):

@@ -9,8 +9,7 @@ import optparse
 
 from paver.easy import path, task, call_task, needs, consume_nargs, info, no_help, environment, cmdopts
 
-from sett import uwsgi
-from sett.paths import ROOT
+from sett import uwsgi, ROOT, defaults
 from sett.utils import optional_import
 
 jinja2 = optional_import('jinja2')
@@ -50,7 +49,7 @@ def build_context():
 @needs(['setup_options'])
 @cmdopts([
     optparse.make_option('-r', '--repo',
-                         default='http://enixpi.enix.org',
+                         default=defaults.PYPI_REPOSITORY
                          ),
 ])
 def push(options):

@@ -9,7 +9,7 @@ from packaging.version import Version
 from paver.easy import task, call_task, path, no_help, needs
 from paver.setuputils import setup
 
-from sett.paths import ROOT
+from sett import ROOT
 
 
 @task

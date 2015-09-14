@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 
-import tempfile
 import subprocess
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
-                        info, needs, path, environment, debug)
+                        info, needs, path, environment, debug, sh)
 
-from sett.paths import ROOT
-from sett.bin import which
+from sett import ROOT, which, defaults
+from sett.utils import Tempdir
 from sett.npm import NODE_MODULES
 
 
@@ -31,10 +30,11 @@ defaults to 'ROOT/build/static/js/'.
 If the django settings have a value STATICFILES_DIRS_DEV, it will be appended
 to the STATICFILES_DIRS setting before loading files.
     """
-    tempdir = path(tempfile.mkdtemp())
-    outdir = ROOT.joinpath(getattr(environment, 'requirejs_output_directory', 'build/static/js'))
+    outdir = ROOT.joinpath(getattr(environment,
+                                   'requirejs_output_directory',
+                                   defaults.RJS_BUILD_DIR))
 
-    try:
+    with Tempdir() as tempdir:
         source = tempdir.joinpath('js')
         call_task('virtual_static', args=[tempdir])
 
@@ -42,7 +42,7 @@ to the STATICFILES_DIRS setting before loading files.
             # Auto discover
             args = []
             info('Auto discovering JS apps')
-            for dir in path(tempdir).walkdirs('app'):
+            for dir in path(tempdir).walkdirs(defaults.RJS_APP_DIR):
                 args.extend(x.namebase for x in dir.files('*.js'))
             debug('Autodicovered: %s', args)
 
@@ -52,9 +52,7 @@ to the STATICFILES_DIRS setting before loading files.
 
         for name in args:
             out = ROOT.joinpath(outdir, name + '.js')
-            call_task('rjs_build', args=['app/' + name, source, out])
-    finally:
-        tempdir.rmtree()
+            call_task('rjs_build', args=[defaults.RJS_APP_DIR + '/' + name, source, out])
 
 
 @task
@@ -89,7 +87,7 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
     """
     name, source, out = args
     source = path(source)
-    config_js = source.joinpath('config.js')
+    config_js = source.joinpath(defaults.RJS_CONFIG)
     almond = NODE_MODULES.joinpath('almond/almond')
 
     info('Writing %s', out)
@@ -116,3 +114,18 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
     )
     rjs_process.wait()
     null.close()
+
+
+@task
+@consume_args
+def madge(args):
+    with Tempdir() as tempdir:
+        call_task('virtual_static', args=[tempdir])
+        command = [
+            which.madge,
+            '-f', 'amd',
+            '-R', tempdir.joinpath('js/config.js'),
+            tempdir.joinpath('js'),
+        ]
+        command.extend(args)
+        sh(command)

@@ -4,10 +4,11 @@
 import optparse
 
 from paver.easy import task, call_task, consume_nargs, needs, sh, cmdopts, path
+from sett import which
 
 
 @task
-@needs('scp')
+@needs(['scp', 'setup_options'])
 @consume_nargs(1)
 @cmdopts([
     optparse.make_option('-V', '--venv',
@@ -28,14 +29,15 @@ def remote_install(args, options):
 
     target = '{name}-{version}.tar.gz'.format(**options.setup)
     ssh_command = [
-        'ssh', remote,
+        which.ssh,
+        remote,
         '-C',
         venv.joinpath('bin/pip'), 'install', target,
     ]
     if options.remote_install.force:
         ssh_command.extend(['--no-deps', '--upgrade'])
     sh(ssh_command)
-    sh(['ssh', remote, '-C', 'rm', target])
+    sh([which.ssh, remote, '-C', 'rm', target])
 
 
 @task
