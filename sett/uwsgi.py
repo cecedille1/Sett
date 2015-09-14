@@ -96,7 +96,7 @@ def uwsgi_xml():
     context = environment.template_context
     config = {
         'pidfile': PIDFILE,
-        'daemonize': LOGS.joinpath('uwsgi.log'):,
+        'daemonize': LOGS.joinpath('uwsgi.log'),
         'socket': SOCKET,
         'chmod-socket': '660',
         'processes': '1',
