@@ -14,7 +14,7 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path,
                         environment)
 
-from sett import ROOT, which, defaults
+from sett import which
 
 
 @task
