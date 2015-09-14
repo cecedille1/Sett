@@ -27,7 +27,20 @@ def pip(args):
 @consume_args
 def pip_install(args, options):
     """Install a pip package"""
-    call_task('pip', args=['install'] + args)
+    command = ['install']
+    if defaults.PYPI_PACKAGE_INDEX:
+        command.extend(['--index-url', defaults.PYPI_PACKAGE_INDEX])
+        if defaults.PYPI_PACKAGE_INDEX_IGNORE_SSL:
+            try:
+                from urlparse import urlparse
+            except ImportError:
+                from urllib.parse import urlparse
+
+            url = urlparse(defaults.PYPI_PACKAGE_INDEX)
+            command.extend(['--trusted-host', url.netloc])
+
+    command.extend(args)
+    call_task('pip', args=command)
 
 
 @task
