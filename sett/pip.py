@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 
 import sys
 
 from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, info
 from sett import ROOT, defaults
+from sett.utils import BaseInstalledPackages
 
 
 VENV_BIN = path(sys.executable).dirname()
@@ -13,6 +15,19 @@ VENV_DIR = VENV_BIN.dirname()
 
 
 REQUIREMENTS = ROOT.joinpath(defaults.REQUIREMENTS)
+
+
+class InstalledPackages(BaseInstalledPackages):
+    def __contains__(self, gem):
+        if ':' in gem:
+            gem, version = gem.split(':', 1)
+        return super(InstalledPackages, self).__contains__(gem)
+
+    def evaluate(self):
+        from pip.utils import get_installed_distributions
+        return [i.project_name for i in get_installed_distributions()]
+
+installed_packages = InstalledPackages()
 
 
 @task
