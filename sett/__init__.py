@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 import os
+import sys
 import importlib
 
 from sett.bin import which
@@ -23,6 +24,8 @@ from paver.tasks import environment, Task
 ALL_LIBS = [p.namebase for p in path(__file__).dirname().files('*.py')]
 DISABLED_LIBS = set(os.environ.get('SETT_DISABLED_LIBS', '').split())
 ENABLED_LIBS = set(os.environ.get('SETT_ENABLED_LIBS', '').split())
+
+sys.path.append(ROOT)
 
 
 class SettTaskFinder(object):
