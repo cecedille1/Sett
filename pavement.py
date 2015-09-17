@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
+DISABLED_LIBS = ['django']
+
 try:
     import sett
 except ImportError:
