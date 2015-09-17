@@ -25,6 +25,11 @@ ALL_LIBS = [p.namebase for p in path(__file__).dirname().files('*.py')]
 DISABLED_LIBS = set(os.environ.get('SETT_DISABLED_LIBS', '').split())
 ENABLED_LIBS = set(os.environ.get('SETT_ENABLED_LIBS', '').split())
 
+
+if environment.pavement:
+    DISABLED_LIBS.update(getattr(environment.pavement, 'DISABLED_LIBS', []))
+    ENABLED_LIBS.update(getattr(environment.pavement, 'ENABLED_LIBS', []))
+
 sys.path.append(ROOT)
 
 
