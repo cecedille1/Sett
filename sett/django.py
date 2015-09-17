@@ -17,8 +17,6 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
 from sett import which, DeployContext
 
 
-
-
 @task
 def clean_migrations():
     """

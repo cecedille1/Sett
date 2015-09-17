@@ -7,7 +7,7 @@ import sys
 import time
 from xml.etree import ElementTree as ET
 
-from paver.easy import task, sh, needs, consume_nargs, call_task, info, environment, path
+from paver.easy import task, sh, needs, consume_nargs, call_task, info, path
 
 from sett import which, ROOT
 from sett.paths import LOGS
