@@ -52,7 +52,7 @@ def nginx_conf():
     """
     Generates etc/nginx.conf
     """
-    call_task('render_template', args=['nginx.conf.jinja', 'etc/nginx.conf'])
+    call_task('render_template', args=[defaults.NGINX_TEMPLATE, 'etc/nginx.conf'])
 
 
 @task
@@ -60,7 +60,7 @@ def monit_conf():
     """
     Generates etc/monit.conf
     """
-    call_task('render_template', args=['monit.conf.jinja', 'etc/monit.conf'])
+    call_task('render_template', args=[defaults.MONIT_TEMPLATE, 'etc/monit.conf'])
 
 
 @task
