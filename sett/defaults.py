@@ -73,3 +73,7 @@ TESTS_NAMING = 'ignore-first'
 RJS_BUILD_DIR = 'build/static/js'
 RJS_CONFIG = 'config.js'
 RJS_APP_DIR = 'app'
+
+
+DEPLOY_TEMPLATES_DIR = 'sett-templates'
+DOMAIN_TEMPLATE = 'dev.{name}.emencia.net'

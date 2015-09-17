@@ -1,48 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-import getpass
-import os
-import grp
 import optparse
 
-from paver.easy import path, task, call_task, needs, consume_nargs, info, no_help, environment, cmdopts
+from paver.easy import path, task, call_task, needs, consume_nargs, info, cmdopts, debug
 
-from sett import uwsgi, ROOT, defaults
+from sett import ROOT, defaults
 from sett.utils import optional_import
+from sett.deploy_context import DeployContext
 
 jinja2 = optional_import('jinja2')
 
-templates_dir = path(__file__).dirname().joinpath('templates')
-
-
-@task
-@no_help
-@needs(['setup_options'])
-def build_context():
-    name = environment.options.setup.name.lower()
-    context = {
-        'uwsgi': {
-            'pidfile': uwsgi.PIDFILE,
-            'socket': uwsgi.SOCKET,
-            'config': uwsgi.CONFIG,
-        },
-        'ctl': '{} daemon'.format(path(sys.argv[0]).abspath()),
-        'domain': 'dev.{}.emencia.net'.format(name),
-        'monit': {
-            'mgroup': 'apps',
-            'mmode': 'active',
-        },
-        'ROOT': ROOT,
-        'NAME': name,
-        'UID': getpass.getuser(),
-        'GID': grp.getgrgid(os.getgid()).gr_name,
-        'options': {
-            'FORCE_REWRITE': False,
-        }
+DeployContext.register(
+    monit={
+        'mgroup': 'apps',
+        'mmode': 'active',
+    },
+    options={
+        'FORCE_REWRITE': False,
     }
-    environment.template_context = context
+)
 
 
 @task
@@ -88,7 +65,6 @@ def monit_conf():
 
 @task
 @consume_nargs(2)
-@needs(['build_context'])
 def render_template(args):
     """
     Render a jinja2 template into a file
@@ -99,18 +75,22 @@ def render_template(args):
     destination_path.dirname().makedirs()
 
     template = _get_template(template)
-    rendered = template.render(environment.template_context)
+    rendered = template.render(DeployContext())
     info('Writing %s', destination_path)
     with open(destination_path, 'w') as destination:
         destination.write(rendered)
 
 
 def _get_template(template_name):
+    locations = [
+        path(__file__).dirname().joinpath('templates'),  # Built in templates
+    ]
+    if ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR):
+        locations.append(ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR))
+
+    debug('Loading templates from %s', locations)
     jinja = jinja2.Environment(
-        loader=jinja2.FileSystemLoader([
-            ROOT.joinpath('templates'),
-            templates_dir,
-        ]),
+        loader=jinja2.FileSystemLoader(locations),
     )
     jinja.filters['as_bool'] = lambda x: x if x != 'false' else False
     return jinja.get_template(template_name)

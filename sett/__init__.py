@@ -17,6 +17,7 @@ import importlib
 from sett.bin import which
 from sett.utils import optional_import
 from sett.paths import ROOT
+from sett.deploy_context import DeployContext
 
 from paver.path import path
 from paver.tasks import environment, Task

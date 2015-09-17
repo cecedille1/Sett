@@ -3,19 +3,30 @@
 
 import signal
 import os
+import sys
 import time
 from xml.etree import ElementTree as ET
 
-from paver.easy import task, sh, needs, consume_nargs, call_task, info, environment
+from paver.easy import task, sh, needs, consume_nargs, call_task, info, environment, path
 
 from sett import which, ROOT
 from sett.paths import LOGS
 from sett.pip import VENV_DIR
+from sett.deploy_context import DeployContext
 
 UWSGI_PATH = ROOT.joinpath('var')
 PIDFILE = UWSGI_PATH.joinpath('uwsgi.pid')
 SOCKET = UWSGI_PATH.joinpath('uwsgi.sock')
 CONFIG = ROOT.joinpath('parts/uwsgi/uwsgi.xml')
+
+DeployContext.register(
+    uwsgi={
+        'pidfile': PIDFILE,
+        'socket': SOCKET,
+        'config': CONFIG,
+    },
+    ctl='{} daemon'.format(path(sys.argv[0]).abspath()),
+)
 
 
 @task
@@ -85,41 +96,33 @@ def Element(tag, text):
 
 
 @task
-@needs([
-    'build_context',
-])
 def uwsgi_xml():
     """
     Generates parts/uwsgi/uwsgi.xml
     """
-
-    context = environment.template_context
-    config = {
-        'pidfile': PIDFILE,
-        'daemonize': LOGS.joinpath('uwsgi.log'),
-        'socket': SOCKET,
-        'chmod-socket': '660',
-        'processes': '1',
-        'chown-socket': '{UID}:{GID}'.format(**context),
-        'home': VENV_DIR,
-        'pythonpath': ROOT,
+    context = DeployContext({
+        'uwsgi': {
+            'processes': 1,
+        },
         'env': [
             'LANG=fr_FR.UTF-8',
             'LC_ALL=fr_FR.UTF-8',
         ],
-    }
+    })
 
-    if 'DJANGO_SETTINGS_MODULE' in os.environ:
-        call_task('django_settings')
-        from django.conf import settings
-        # django uses package.module.name and uwsgi uses package.module:name
-        module, name = settings.WSGI_APPLICATION.rsplit('.', 1)
-        config['env'].append('DJANGO_SETTINGS_MODULE={}'.format(os.environ['DJANGO_SETTINGS_MODULE']))
-        config['module'] = '{}:{}'.format(module, name)
-    elif hasattr(environment, 'wsgi_module'):
-        config['module'] = environment.wsgi_module
-    else:
-        raise RuntimeError('Set environment.wsgi_module')
+    module, name = context['wsgi_application'].rsplit('.', 1)
+    config = {
+        'module': '{}:{}'.format(module, name),
+        'pidfile': PIDFILE,
+        'daemonize': LOGS.joinpath('uwsgi.log'),
+        'socket': SOCKET,
+        'processes': str(context['uwsgi.processes']),
+        'chown-socket': '{UID}:{GID}'.format(**context),
+        'chmod-socket': '660',
+        'home': VENV_DIR,
+        'pythonpath': ROOT,
+        'env': context['env'],
+    }
 
     root = ET.Element('uwsgi')
     for tag_name, text in config.items():

@@ -14,7 +14,9 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path,
                         environment)
 
-from sett import which
+from sett import which, DeployContext
+
+
 
 
 @task
@@ -58,6 +60,23 @@ def clean_migrations():
 def django_settings():
     import django
     django.setup()
+
+
+@DeployContext.register
+def load_django():
+    from django.conf import settings
+    return {
+        'env': ['DJANGO_SETTINGS_MODULE={}'.format(os.environ['DJANGO_SETTINGS_MODULE'])],
+        'wsgi_application': settings.WSGI_APPLICATION,
+        'locations': {
+            'static': settings.STATIC_URL,
+            'media': settings.MEDIA_URL,
+        },
+        'directories': {
+            'static': settings.STATIC_ROOT,
+            'media': settings.MEDIA_ROOT,
+        }
+    }
 
 
 @task
