@@ -10,6 +10,7 @@ from sett.utils import optional_import
 from sett.deploy_context import DeployContext
 
 jinja2 = optional_import('jinja2')
+_jinja_instance = None
 
 DeployContext.register(
     monit={
@@ -82,15 +83,30 @@ def render_template(args):
 
 
 def _get_template(template_name):
-    locations = [
-        path(__file__).dirname().joinpath('templates'),  # Built in templates
-    ]
-    if ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR):
-        locations.append(ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR))
+    global _jinja_instance
+    if _jinja_instance is None:
+        _jinja_instance = make_jinja_instance()
+    return _jinja_instance.get_template(template_name)
 
-    debug('Loading templates from %s', locations)
-    jinja = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(locations),
-    )
+
+def make_jinja_instance():
+    info('Creating jinja instance')
+    location = path(__file__).dirname().joinpath('templates')
+    debug('Loading builtin templates from %s', location)
+    loader = jinja2.FileSystemLoader(location)  # Built in templates
+
+    if ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR):
+        location = ROOT.joinpath(defaults.DEPLOY_TEMPLATES_DIR)
+        debug('Loading templates from %s', location)
+        # Load users or builtin
+        loader = jinja2.ChoiceLoader([
+            jinja2.FileSystemLoader(location),
+            loader,
+            jinja2.PrefixLoader({
+                'super': loader,
+            })
+        ])
+
+    jinja = jinja2.Environment(loader=loader)
     jinja.filters['as_bool'] = lambda x: x if x != 'false' else False
-    return jinja.get_template(template_name)
+    return jinja
