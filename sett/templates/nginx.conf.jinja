@@ -14,13 +14,19 @@ server {
     }
 
     {% endif %}
+
+    {% block media %}
     location {{locations.media}} {
         alias {{ directories.media }};
     }
+    {% endblock %}
 
+    {% block static %}
     location {{locations.static}} {
-        root {{ directories.static }};
+        alias {{ directories.static }};
     }
+    {% endblock %}
+
 
     location /admin {
         include                 /etc/nginx/uwsgi_params;
