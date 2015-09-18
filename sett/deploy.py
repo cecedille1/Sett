@@ -12,16 +12,6 @@ from sett.deploy_context import DeployContext
 jinja2 = optional_import('jinja2')
 _jinja_instance = None
 
-DeployContext.register(
-    monit={
-        'mgroup': 'apps',
-        'mmode': 'active',
-    },
-    options={
-        'FORCE_REWRITE': False,
-    }
-)
-
 
 @task
 @needs(['setup_options'])
@@ -53,7 +43,11 @@ def nginx_conf():
     """
     Generates etc/nginx.conf
     """
-    call_task('render_template', args=[defaults.NGINX_TEMPLATE, 'etc/nginx.conf'])
+    render_template(defaults.NGINX_TEMPLATE, 'etc/nginx.conf', {
+        'options': {
+            'FORCE_REWRITE': False,
+        }
+    })
 
 
 @task
@@ -61,22 +55,23 @@ def monit_conf():
     """
     Generates etc/monit.conf
     """
-    call_task('render_template', args=[defaults.MONIT_TEMPLATE, 'etc/monit.conf'])
+    render_template(defaults.MONIT_TEMPLATE, 'etc/monit.conf', {
+        'monit': {
+            'mgroup': 'apps',
+            'mmode': 'active',
+        },
+    })
 
 
-@task
-@consume_nargs(2)
-def render_template(args):
+def render_template(template, destination_path, context=tuple()):
     """
     Render a jinja2 template into a file
     """
-    template, destination_path = args
-
     destination_path = ROOT.joinpath(destination_path)
     destination_path.dirname().makedirs()
 
     template = _get_template(template)
-    rendered = template.render(DeployContext())
+    rendered = template.render(DeployContext(context))
     info('Writing %s', destination_path)
     with open(destination_path, 'w') as destination:
         destination.write(rendered)
@@ -90,7 +85,7 @@ def _get_template(template_name):
 
 
 def make_jinja_instance():
-    info('Creating jinja instance')
+    debug('Creating jinja instance')
     location = path(__file__).dirname().joinpath('templates')
     debug('Loading builtin templates from %s', location)
     loader = jinja2.FileSystemLoader(location)  # Built in templates
