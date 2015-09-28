@@ -16,6 +16,19 @@ class DeployContextInstance(collections.Mapping):
         self.values = values
 
     def __getitem__(self, item):
+        try:
+            return self._get(item)
+        except KeyError:
+            raise KeyError('''Missing key ``{name}``: try defining it:
+from sett import DeployContext
+@DeployContext.register
+def set_{name_fn}():
+    return {{
+        '{name}': None
+    }}
+'''.format(name=item, name_fn=item.replace('.', '_')))
+
+    def _get(self, item):
         values = self.values
         for key in item.split('.'):
             values = values[key]
