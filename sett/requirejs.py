@@ -7,7 +7,7 @@ import subprocess
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
                         info, needs, path, environment, debug, sh)
 
-from sett import ROOT, which, defaults
+from sett import ROOT, which, defaults, parallel
 from sett.utils import Tempdir
 from sett.npm import NODE_MODULES
 
@@ -34,6 +34,10 @@ to the STATICFILES_DIRS setting before loading files.
                                    'requirejs_output_directory',
                                    defaults.RJS_BUILD_DIR))
 
+    @parallel
+    def build(*args):
+        call_task('rjs_build', args=args)
+
     with Tempdir() as tempdir:
         source = tempdir.joinpath('js')
         call_task('virtual_static', args=[tempdir])
@@ -50,9 +54,12 @@ to the STATICFILES_DIRS setting before loading files.
             info('No file to optimize')
             return
 
-        for name in args:
-            out = ROOT.joinpath(outdir, name + '.js')
-            call_task('rjs_build', args=[defaults.RJS_APP_DIR + '/' + name, source, out])
+        try:
+            for name in args:
+                out = ROOT.joinpath(outdir, name + '.js')
+                build(defaults.RJS_APP_DIR + '/' + name, source, out)
+        finally:
+            build.wait()
 
 
 @task

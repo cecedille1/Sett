@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+USE_THREADING = True
+
 # The name of the default requirements file
 REQUIREMENTS = 'requirements.txt'
 

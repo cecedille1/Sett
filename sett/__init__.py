@@ -8,6 +8,7 @@ __all__ = [
     'SettTaskFinder',
     'which',
     'optional_import',
+    'parallel',
 ]
 
 import os
@@ -17,6 +18,7 @@ import importlib
 from sett.bin import which
 from sett.utils import optional_import
 from sett.paths import ROOT
+from sett.parallel import parallel
 from sett.deploy_context import DeployContext
 
 from paver.path import path
