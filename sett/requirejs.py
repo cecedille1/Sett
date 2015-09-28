@@ -106,7 +106,7 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
         '-o',
         'baseUrl={}'.format(source),
         'mainConfigFile={}'.format(config_js),
-        'optimize=uglify2',
+        'optimize={}'.format(defaults.RJS_OPTIMIZE),
         'generateSourceMaps=true',
         'preserveLicenseComments=false',
         'skipDirOptimize=false',
