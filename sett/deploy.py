@@ -3,7 +3,7 @@
 
 import optparse
 
-from paver.easy import path, task, call_task, needs, consume_nargs, info, cmdopts, debug
+from paver.easy import path, task, call_task, needs, info, cmdopts, debug
 
 from sett import ROOT, defaults
 from sett.utils import optional_import
