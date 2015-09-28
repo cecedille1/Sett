@@ -34,6 +34,8 @@ FLAKE8_EXTRA_ARGS = ['--max-line-length=120']
 DJANGO_SETTINGS_FILE = ['settings.py']
 
 
+CURL_EXTRA_HEADERS = {}
+
 TESTS_ROOT = 'tests'
 TESTS_FILE_PREFIX = 'test_{}'
 
