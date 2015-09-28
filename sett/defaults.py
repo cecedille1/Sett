@@ -3,6 +3,9 @@
 
 USE_THREADING = True
 
+HTTP_WSGI_IP = ''
+HTTP_WSGI_PORT = 8000
+
 # The name of the default requirements file
 REQUIREMENTS = 'requirements.txt'
 
@@ -81,3 +84,11 @@ DEPLOY_TEMPLATES_DIR = 'sett-templates'
 DOMAIN_TEMPLATE = 'dev.{name}.emencia.net'
 NGINX_TEMPLATE = 'nginx.conf.jinja'
 MONIT_TEMPLATE = 'monit.conf.jinja'
+
+
+"""
+.. property:: UWSGI_SOCKET_TYPE
+
+    value unix or http. The type of unix socket to use
+"""
+UWSGI_SOCKET_TYPE = 'unix'

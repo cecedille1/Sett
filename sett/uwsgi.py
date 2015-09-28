@@ -9,24 +9,38 @@ from xml.etree import ElementTree as ET
 
 from paver.easy import task, sh, needs, consume_nargs, call_task, info, path
 
-from sett import which, ROOT
+from sett import which, ROOT, defaults
 from sett.paths import LOGS
 from sett.pip import VENV_DIR
 from sett.deploy_context import DeployContext
 
 UWSGI_PATH = ROOT.joinpath('var')
 PIDFILE = UWSGI_PATH.joinpath('uwsgi.pid')
-SOCKET = UWSGI_PATH.joinpath('uwsgi.sock')
 CONFIG = ROOT.joinpath('parts/uwsgi/uwsgi.xml')
 
 DeployContext.register(
     uwsgi={
         'pidfile': PIDFILE,
-        'socket': SOCKET,
         'config': CONFIG,
     },
     ctl='{} daemon'.format(path(sys.argv[0]).abspath()),
 )
+
+
+@DeployContext.register
+def uwsgi_context():
+    if defaults.UWSGI_SOCKET_TYPE == 'unix':
+        return {
+            'uwsgi': {
+                'socket': UWSGI_PATH.joinpath('uwsgi.sock')
+            }
+        }
+    else:
+        return {
+            'uwsgi': {
+                'http': '{}:{}'.format(defaults.HTTP_WSGI_IP, defaults.HTTP_WSGI_PORT),
+            }
+        }
 
 
 @task
@@ -115,14 +129,22 @@ def uwsgi_xml():
         'module': '{}:{}'.format(module, name),
         'pidfile': PIDFILE,
         'daemonize': LOGS.joinpath('uwsgi.log'),
-        'socket': SOCKET,
         'processes': str(context['uwsgi.processes']),
-        'chown-socket': '{UID}:{GID}'.format(**context),
-        'chmod-socket': '660',
         'home': VENV_DIR,
         'pythonpath': ROOT,
         'env': context['env'],
     }
+
+    if 'uwsgi.socket' in context:
+        config.update({
+            'socket': context['uwsgi.socket'],
+            'chown-socket': '{UID}:{GID}'.format(**context),
+            'chmod-socket': '660',
+        })
+    else:
+        config.update({
+            'http': context['uwsgi.http'],
+        })
 
     root = ET.Element('uwsgi')
     for tag_name, text in config.items():
