@@ -100,7 +100,7 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
     info('Writing %s', out)
 
     null = open('/dev/null', 'w')
-    rjs_process = subprocess.Popen([
+    command = [
         which.node,
         which.search('r.js'),
         '-o',
@@ -115,7 +115,10 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
         'insertRequire={}'.format(name),
         'out={}'.format(out),
         'wrap=true',
-    ],
+    ]
+    debug('Running: %s', ' '.join(command))
+    rjs_process = subprocess.Popen(
+        command,
         stdout=null,
         stderr=null,
     )
