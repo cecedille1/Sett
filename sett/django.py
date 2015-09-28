@@ -62,6 +62,11 @@ def django_settings():
 
 @DeployContext.register
 def load_django():
+    try:
+        import django  # noqa
+    except ImportError:
+        return {}
+
     from django.conf import settings
     return {
         'env': ['DJANGO_SETTINGS_MODULE={}'.format(os.environ['DJANGO_SETTINGS_MODULE'])],
