@@ -11,3 +11,16 @@ except ImportError:
     import os
     sys.path.append(os.path.dirname(__file__))
     import sett
+
+
+from sett import DeployContext, defaults
+
+
+defaults.UWSGI_SOCKET_TYPE = 'http'
+
+
+@DeployContext.register
+def set_wsgi_application():
+    return {
+        'wsgi_application': 'sett.pavement'
+    }
