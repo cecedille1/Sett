@@ -27,14 +27,14 @@ class InstalledGems(BaseInstalledPackages):
         if not GEM_HOME.exists():
             return []
 
+        env = dict(os.environ)
+        env['GEM_HOME'] = GEM_HOME
         gem_list = subprocess.Popen([
             which.gem,
             'list',
             '--no-verbose',
         ],
-            env={
-                'GEM_HOME': GEM_HOME,
-        },
+            env=env,
             stdout=subprocess.PIPE,
         )
         return (k.split()[0].decode() for k in gem_list.stdout)
@@ -45,9 +45,9 @@ installed_gems = InstalledGems()
 @task
 @consume_args
 def ruby(args):
-    sh([which.ruby] + args, env={
-        'GEM_HOME': GEM_HOME
-    })
+    env = dict(os.environ)
+    env['GEM_HOME'] = GEM_HOME
+    sh([which.ruby] + args, env=env)
 
 
 @task
