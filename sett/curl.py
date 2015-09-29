@@ -26,6 +26,13 @@ from sett import defaults, __version__ as sett_version
         default=False,
     ),
     optparse.make_option(
+        '-H',
+        '--header',
+        action='append',
+        dest='headers',
+        default=[],
+    ),
+    optparse.make_option(
         '-q',
         '--ignore-body',
         action='store_true',
@@ -47,6 +54,7 @@ def curl(args, options):
         'X-Requested-With': 'XMLHttpRequest',
         'User-Agent': 'sett.curl.curl Sett/{}'.format(sett_version),
     }
+    headers.update(h.split(':', 1) for h in options.headers)
     headers.update(defaults.CURL_EXTRA_HEADERS)
 
     if source == '-':
@@ -63,6 +71,7 @@ def curl(args, options):
         headers=headers,
         data=data,
         stream=options.stream,
+        allow_redirects=False,
     )
     end = time.time()
 
