@@ -96,3 +96,5 @@ MONIT_TEMPLATE = 'monit.conf.jinja'
     value unix or http. The type of unix socket to use
 """
 UWSGI_SOCKET_TYPE = 'unix'
+
+UWSGI_EXTRA = {}

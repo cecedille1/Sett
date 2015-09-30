@@ -155,6 +155,8 @@ def uwsgi_xml():
             for key in context['locations']
         ]
 
+    config.update(defaults.UWSGI_EXTRA)
+
     root = ET.Element('uwsgi')
     for tag_name, text in config.items():
         if isinstance(text, list):
