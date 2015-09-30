@@ -5,6 +5,7 @@ USE_THREADING = True
 
 HTTP_WSGI_IP = ''
 HTTP_WSGI_PORT = 8000
+STATIC_SERVER = 'nginx'
 
 # The name of the default requirements file
 REQUIREMENTS = 'requirements.txt'

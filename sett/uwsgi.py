@@ -122,6 +122,8 @@ def uwsgi_xml():
             'LANG=fr_FR.UTF-8',
             'LC_ALL=fr_FR.UTF-8',
         ],
+        'locations': {},
+        'directories': {},
     })
 
     module, name = context['wsgi_application'].rsplit('.', 1)
@@ -145,6 +147,13 @@ def uwsgi_xml():
         config.update({
             'http': context['uwsgi.http'],
         })
+
+    if defaults.STATIC_SERVER == 'uwsgi':
+        config['static-map'] = [
+            '{}={}'.format(context['locations'][key],
+                           context['directories'][key])
+            for key in context['locations']
+        ]
 
     root = ET.Element('uwsgi')
     for tag_name, text in config.items():
