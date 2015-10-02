@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import subprocess
+import os
+
 from paver.easy import debug, task, consume_args, call_task, info, environment
 
 from sett import ROOT, which, defaults
@@ -14,9 +16,9 @@ def run_compass(*commands, **kw):
     command.append(ROOT.joinpath(getattr(environment, 'compass_root', defaults.COMPASS_DIR)))
 
     info('Running: %s', ' '.join(command))
-    compass = subprocess.Popen(command, env={
-        'GEM_HOME': GEM_HOME,
-    })
+    env = dict(os.environ)
+    env['GEM_HOME'] = GEM_HOME
+    compass = subprocess.Popen(command, env=env)
     if not kw.get('background', False):
         rc = compass.wait()
         debug('compass returned %s', rc)
