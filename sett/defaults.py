@@ -18,7 +18,7 @@ TAR_ROOT_FILE_MARKER = 'index.html'
 
 
 # The URL used to push the packages (pip upload)
-PYPI_REPOSITORY = 'https://enixpi.enix.org'
+PYPI_REPOSITORY = 'http://enixpi.enix.org/'
 PYPI_REPOSITORY_IGNORE_SSL = True
 
 # The URL used to fetch the packages (pip install -i)

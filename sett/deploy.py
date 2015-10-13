@@ -15,16 +15,11 @@ _jinja_instance = None
 
 @task
 @needs(['setup_options'])
-@cmdopts([
-    optparse.make_option('-r', '--repo',
-                         default=defaults.PYPI_REPOSITORY
-                         ),
-])
 def push(options):
     """Pushes the archive in the enix repo"""
     call_task('sdist')
     call_task('upload', options={
-        'repository': options.repo,
+        'repository': defaults.PYPI_REPOSITORY,
     })
 
 
