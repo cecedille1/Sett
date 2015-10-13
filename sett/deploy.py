@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import optparse
-
-from paver.easy import path, task, call_task, needs, info, cmdopts, debug
+from paver.easy import path, task, call_task, needs, info, debug
 
 from sett import ROOT, defaults
 from sett.utils import optional_import
