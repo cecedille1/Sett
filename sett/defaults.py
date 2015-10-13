@@ -22,7 +22,7 @@ PYPI_REPOSITORY = 'https://enixpi.enix.org'
 PYPI_REPOSITORY_IGNORE_SSL = True
 
 # The URL used to fetch the packages (pip install -i)
-PYPI_PACKAGE_INDEX = 'https://pi.enix.org'
+PYPI_PACKAGE_INDEX = 'https://enixpi.enix.org/simple/'
 PYPI_PACKAGE_INDEX_IGNORE_SSL = True
 
 
