@@ -7,7 +7,7 @@ import os
 import optparse
 import importlib
 
-from paver.easy import task, needs, cmdopts, call_task, path, sh
+from paver.easy import task, needs, cmdopts, call_task, path, sh, debug
 from sett import which, defaults
 
 
@@ -112,7 +112,7 @@ def coverage(options):
         nosetest_options.update({
             'with-xcoverage': True,
             'xcoverage-file': options.coverage.xcoverage,
-            'xcoverage-to-stdout': False,
+            'xcoverage-to-stdout': sys.version_info > (3, 0),
         })
     else:
         nosetest_options.update({
@@ -130,6 +130,7 @@ def coverage(options):
         'cover-package': packages,
     })
 
+    debug('nosetests %s', nosetest_options)
     return call_task('nosetests', options=nosetest_options)
 
 
