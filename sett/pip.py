@@ -14,9 +14,6 @@ VENV_BIN = path(sys.executable).dirname()
 VENV_DIR = VENV_BIN.dirname()
 
 
-REQUIREMENTS = ROOT.joinpath(defaults.REQUIREMENTS)
-
-
 class InstalledPackages(BaseInstalledPackages):
     def __contains__(self, gem):
         if ':' in gem:
@@ -61,7 +58,8 @@ def pip_install(args, options):
 @task
 def pip_setup():
     """Install the requirements.txt"""
-    call_task('pip_install', args=['-r', REQUIREMENTS])
+    requirements = ROOT.joinpath(defaults.REQUIREMENTS)
+    call_task('pip_install', args=['-r', requirements])
 
 
 @task
@@ -71,6 +69,12 @@ def pip_req(args):
     package = args[0]
     call_task('pip_install', [package])
 
-    info('Adding %s to requirements.txt', package)
-    with open(REQUIREMENTS, 'a') as req_txt:
-        req_txt.write('{}\n'.format(package))
+    requirements = ROOT.joinpath(defaults.REQUIREMENTS)
+    with open(requirements, 'r+') as req_txt:
+        for line in req_txt:
+            if line.strip() == package:
+                info('%s already present in %s', package, requirements)
+                break
+        else:
+            info('Adding %s to %s', package, requirements)
+            req_txt.write('{}\n'.format(package))
