@@ -23,7 +23,7 @@ def flake8(options):
     if out == '-':
         outfile = sys.stdout
     else:
-        outfile = open(out, 'wb')
+        outfile = open(out, 'w', encoding='utf-8')
 
     try:
         outfile.write(flake8_report)
