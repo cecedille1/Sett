@@ -3,6 +3,7 @@
 
 
 import sys
+import os
 
 from packaging.version import Version
 
@@ -37,8 +38,10 @@ def make(options):
 
     if not Version(options.setup.version).is_prerelease:
         target = '{name}-{version}.tar.gz'.format(**options.setup)
-        link = 'dist/{name}-latest.tar.gz'.format(**options.setup)
-        path(link).unlink_p()
+        link = ROOT.joinpath('dist/{name}-latest.tar.gz'.format(**options.setup))
+
+        if link.islink():
+            os.unlink(link)
 
         sys.stderr.write('Link {0} to {1}\n'.format(link, target))
         path(target).symlink(link)
