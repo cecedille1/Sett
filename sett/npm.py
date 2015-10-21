@@ -9,7 +9,24 @@ from paver.easy import debug, task, consume_args, call_task, sh, might_call
 from sett import which, ROOT
 from sett.utils import BaseInstalledPackages
 
-NODE_MODULES = ROOT.joinpath('node_modules')
+
+def get_root():
+    root = ROOT
+    while True:
+        if root == '/':
+            break
+        node_modules = root.joinpath('node_modules')
+        if node_modules.isdir():
+            break
+        root = root.parent
+    else:
+        node_modules = ROOT.joinpath('node_modules')
+
+    debug('Node modules is %s', node_modules)
+    return node_modules
+
+
+NODE_MODULES = get_root()
 
 
 class InstalledPackages(BaseInstalledPackages):
