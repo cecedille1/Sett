@@ -27,6 +27,10 @@ class Linear(object):
     def wait(self):
         return True
 
+    def for_each(self, iterable):
+        for i in iterable:
+            self(i)
+
 
 class Threaded(object):
     def __init__(self, fn, n=4):
@@ -35,6 +39,11 @@ class Threaded(object):
         debug('Starting %s threads', n)
         self._threads = [threading.Thread(target=self._worker(x)) for x in range(n)]
         self.started = False
+
+    def for_each(self, iterable):
+        for i in iterable:
+            self(i)
+        self.wait()
 
     def start(self):
         debug('Starting')
