@@ -36,7 +36,6 @@ class Threaded(object):
     def __init__(self, fn, n=4):
         self._fn = fn
         self._queue = queue.Queue()
-        debug('Starting %s threads', n)
         self._threads = [threading.Thread(target=self._worker(x)) for x in range(n)]
         self.started = False
 
@@ -46,7 +45,7 @@ class Threaded(object):
         self.wait()
 
     def start(self):
-        debug('Starting')
+        debug('Starting %s threads', len(self._threads))
         for t in self._threads:
             t.start()
         self.started = True
