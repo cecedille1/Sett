@@ -226,7 +226,6 @@ def migrate():
 @task
 @consume_nargs(1)
 def po(args):
-    ROOT.joinpath('locale').mkdir()
     call_task('django', args=['makemessages', '-i', 'venv/*', '-l'] + args)
 
 
