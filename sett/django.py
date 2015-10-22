@@ -220,7 +220,7 @@ def statics():
 
 @task
 def migrate():
-    call_task('django', args=['migrate'])
+    call_task('django_cmd', args=['migrate'])
 
 
 @task
@@ -231,4 +231,10 @@ def po(args):
 
 @task
 def messages():
-    call_task('django', args=['compilemessages'])
+    call_task('django_cmd', args=['compilemessages'])
+
+
+@task
+def shell():
+    """alias for `django shell`"""
+    call_task('django_cmd', args=['shell'])
