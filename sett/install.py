@@ -3,12 +3,12 @@
 
 import optparse
 
-from paver.easy import task, call_task, consume_nargs, needs, sh, cmdopts, path
+from paver.easy import task, consume_nargs, needs, sh, cmdopts, path, environment
 from sett import which
 
 
 @task
-@needs(['scp', 'setup_options'])
+@needs(['scp'])
 @consume_nargs(1)
 @cmdopts([
     optparse.make_option('-V', '--venv',
@@ -27,7 +27,7 @@ def remote_install(args, options):
     remote = args[0]
     venv = path(options.remote_install.venv)
 
-    target = '{name}-{version}.tar.gz'.format(**options.setup)
+    target = environment.wheel_file.basename()
     ssh_command = [
         which.ssh,
         remote,
@@ -41,7 +41,7 @@ def remote_install(args, options):
 
 
 @task
-@needs(['setup_options'])
+@needs(['wheel'])
 @cmdopts([
     optparse.make_option('-f', '--force',
                          action='store_true',
@@ -52,8 +52,7 @@ def remote_install(args, options):
 @consume_nargs(1)
 def local_install(args, options):
     """Install the package in a virtual env present on the local filesystem"""
-    call_task('sdist')
-    target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
+    target = environment.wheel_file
     venv = path(args[0])
 
     pip_install = [venv.joinpath('bin/pip'), 'install', target]

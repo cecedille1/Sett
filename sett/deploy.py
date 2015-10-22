@@ -16,6 +16,7 @@ _jinja_instance = None
 def push(options):
     """Pushes the archive in the enix repo"""
     call_task('sdist')
+    call_task('wheel')
     call_task('upload', options={
         'repository': defaults.PYPI_REPOSITORY,
     })

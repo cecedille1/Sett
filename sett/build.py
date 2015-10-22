@@ -7,8 +7,8 @@ import os
 
 from packaging.version import Version
 
-from paver.easy import task, call_task, path, no_help, needs
-from paver.setuputils import setup
+from paver.easy import task, call_task, environment, path, no_help, needs, debug, info
+from paver.setuputils import setup, _get_distribution
 
 from sett import ROOT
 
@@ -34,14 +34,42 @@ def clean():
 @needs(['setup_options'])
 def make(options):
     """Overrides sdist to make sure that our setup.py is generated."""
-    call_task('sdist')
+    call_task('sdist', options={'formats': ['gztar', 'zip']})
+    call_task('wheel')
 
     if not Version(options.setup.version).is_prerelease:
-        target = '{name}-{version}.tar.gz'.format(**options.setup)
-        link = ROOT.joinpath('dist/{name}-latest.tar.gz'.format(**options.setup))
+        call_task('link_latest')
+
+
+@task
+@needs(['setup_options'])
+def wheel():
+    call_task('bdist_wheel')
+
+    dist = _get_distribution()
+    for cmd, x, file in dist.dist_files:
+        if cmd == 'bdist_wheel':
+            environment.wheel_file = path(file).abspath()
+            debug('Invented the wheel in %s', environment.wheel_file)
+            break
+    else:
+        info('Cannot invent the wheel')
+
+
+@task
+@needs(['setup_options'])
+def link_latest():
+    dist = _get_distribution()
+    name = dist.get_name()
+    prefix = len(dist.get_fullname()) + 1
+
+    for cmd, x, file in dist.dist_files:
+        file = path(file)
+        ext = file.basename()[prefix:]
+        link = ROOT.joinpath('dist/{}-latest.{}'.format(name, ext))
 
         if link.islink():
             os.unlink(link)
 
-        sys.stderr.write('Link {0} to {1}\n'.format(link, target))
-        path(target).symlink(link)
+        info('Link %s to %s', link, file.basename())
+        file.basename().symlink(link)

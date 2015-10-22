@@ -7,7 +7,7 @@ import os
 import optparse
 import importlib
 
-from paver.easy import task, needs, cmdopts, call_task, path, sh, debug
+from paver.easy import task, needs, cmdopts, call_task, path, sh, debug, environment
 from sett import which, defaults
 
 
@@ -135,7 +135,7 @@ def coverage(options):
 
 
 @task
-@needs(['setup_options'])
+@needs(['wheel'])
 @cmdopts([
     optparse.make_option('-r', '--run',
                          default='',
@@ -157,10 +157,9 @@ def test_archive(options):
     if destdir.isdir():
         destdir.rmtree()
 
-    target = 'dist/{name}-{version}.tar.gz'.format(**options.setup)
     sh([which.virtualenv, '--python', sys.executable, destdir])
 
-    command = [destdir.joinpath('bin/pip'), 'install', target]
+    command = [destdir.joinpath('bin/pip'), 'install', environment.wheel_file]
     if options.pypi:
         command.extend(['-i', options.pypi])
 
