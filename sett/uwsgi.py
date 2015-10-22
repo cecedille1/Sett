@@ -118,12 +118,10 @@ def uwsgi_xml():
         'uwsgi': {
             'processes': 1,
         },
-        'env': [
-            'LANG=fr_FR.UTF-8',
-            'LC_ALL=fr_FR.UTF-8',
-        ],
+        'env': [],
         'locations': {},
         'directories': {},
+        'pythonpath': ROOT,
     })
 
     module, name = context['wsgi_application'].rsplit('.', 1)
@@ -133,8 +131,8 @@ def uwsgi_xml():
         'daemonize': LOGS.joinpath('uwsgi.log'),
         'processes': str(context['uwsgi.processes']),
         'home': VENV_DIR,
-        'pythonpath': ROOT,
         'env': context['env'],
+        'pythonpath': context['pythonpath'],
     }
 
     if 'uwsgi.socket' in context:
