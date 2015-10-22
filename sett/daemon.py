@@ -59,6 +59,13 @@ class DaemonGroup(object):
     def __iter__(self):
         return iter(self._daemons)
 
+    def __len__(self):
+        return len(self._daemons)
+
+    def run(self, *args):
+        assert len(self) == 1
+        self._daemons[0].run(args)
+
     def start(self):
         for d in self:
             d.start()
@@ -161,12 +168,14 @@ class Daemon(object):
         daemonize = self.daemonize
         if callable(daemonize):
             daemonize = daemonize(self.pid_file)
+        elif daemonize is None:
+            daemonize = []
 
         process = self.run(daemonize)
         if self.daemonize:
             debug('Waiting for process')
             process.wait()
-        elif daemonize:
+        elif self.daemonize is None:
             debug('Writing pid in %s', self.pid_file)
             self._set_pid(process.pid)
 
@@ -179,7 +188,8 @@ class Daemon(object):
 
         command = list(self.cmd)
         command.extend(args)
-        info('Running %s', command)
+
+        info('Running %s', ' '.join(command))
         return subprocess.Popen(command, env=env)
 
     def stop(self):
