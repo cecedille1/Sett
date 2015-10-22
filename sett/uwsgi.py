@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import signal
-import os
 import sys
-import time
 from xml.etree import ElementTree as ET
 
-from paver.easy import task, sh, needs, consume_nargs, call_task, info, path
+from paver.easy import task, info, path
 
 from sett import which, ROOT, defaults
+from sett.daemon import Daemon, daemon_task
 from sett.paths import LOGS
 from sett.pip import VENV_DIR
 from sett.deploy_context import DeployContext
@@ -50,57 +48,9 @@ def log_dir():
         LOGS.makedirs()
 
 
-@task
-@needs([
-    'log_dir',
-])
-def uwsgi_start():
-    """Launch the daemon"""
-    sh([
-        which.uwsgi,
-        CONFIG,
-    ])
-
-
-@task
-@consume_nargs(1)
-def daemon(args):
-    """Control the daemon"""
-    command, = args
-    if command == 'start':
-        call_task('uwsgi_start')
-    elif command == 'stop':
-        call_task('uwsgi_stop')
-    elif command == 'restart':
-        call_task('uwsgi_stop')
-        call_task('uwsgi_start')
-
-
-@task
-def uwsgi_stop():
-    """Slay the daemon"""
-    try:
-        with open(PIDFILE, 'r') as pid_file:
-            pid = int(pid_file.read().strip())
-    except IOError:
-        info('uwsgi had no PID file')
-        return
-
-    try:
-        os.kill(pid, signal.SIGKILL)
-    except OSError:
-        info('uwsgi was not running')
-        return
-
-    for x in range(5, 11):
-        time.sleep(2 ** x / 500)
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            break
-    else:
-        info('Program %s did not respond to SIGKILL, sending SIGTERM', pid)
-        os.kill(pid, signal.SIGTERM)
+@daemon_task
+def daemon():
+    return Daemon([which.uwsgi, CONFIG], pid_file=PIDFILE)
 
 
 def Element(tag, text):
