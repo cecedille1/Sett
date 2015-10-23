@@ -17,6 +17,8 @@ RUN_DIR = ROOT.joinpath('var/pid/')
 
 def ctl_task(fn):
     daemons = fn()
+    if not daemons:
+        return
 
     @task
     @consume_nargs(2)
@@ -38,6 +40,8 @@ def ctl_task(fn):
 
 def daemon_task(fn):
     daemon = fn()
+    if not daemon:
+        return
 
     @task
     @consume_nargs(1)
