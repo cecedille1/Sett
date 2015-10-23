@@ -55,6 +55,8 @@ class NodeModulesSearcher(object):
 
 
 class Which(object):
+    NotInstalled = NotInstalled
+
     def __init__(self, searchers):
         self.searchers = searchers
         self._cache = {}
@@ -102,6 +104,8 @@ def default_searchers():
 
 
 class LazyWhich(object):
+    NotInstalled = NotInstalled
+
     def __init__(self, searchers_provider):
         self.sp = searchers_provider
 
