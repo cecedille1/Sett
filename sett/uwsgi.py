@@ -50,7 +50,10 @@ def log_dir():
 
 @daemon_task
 def daemon():
-    return Daemon([which.uwsgi, CONFIG], pid_file=PIDFILE)
+    try:
+        return Daemon([which.uwsgi, CONFIG], pid_file=PIDFILE)
+    except which.NotInstalled:
+        return None
 
 
 def Element(tag, text):
