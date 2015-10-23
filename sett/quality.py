@@ -12,9 +12,9 @@ from sett import which, defaults
 @cmdopts([
     ('output=', 'o', 'Output of the flake8 report'),
 ])
-def flake8(options):
+def quality(options):
     """Enforces PEP8"""
-    out = getattr(options.flake8, 'output', '-')
+    out = getattr(options.quality, 'output', '-')
     flake8_command = [which.flake8]
     flake8_command.extend(defaults.FLAKE8_EXTRA_ARGS)
     flake8_command.extend(package for package in options.setup['packages'] if '.' not in package)

@@ -11,7 +11,7 @@ def jenkins():
     # Generate coverage.xml
     # Generate flake8.log
 
-    call_task('flake8', options={
+    call_task('quality', options={
         'output': 'flake8.log',
     })
     call_task('coverage', options={
