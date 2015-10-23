@@ -31,11 +31,10 @@ def clean():
 
 
 @task
-@needs(['setup_options'])
+@needs(['setup_options', 'wheel'])
 def make(options):
     """Overrides sdist to make sure that our setup.py is generated."""
     call_task('sdist', options={'formats': ['gztar', 'zip']})
-    call_task('wheel')
 
     if not Version(options.setup.version).is_prerelease:
         call_task('link_latest')
