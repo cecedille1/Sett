@@ -46,11 +46,15 @@ def daemon_task(fn):
     @task
     @consume_nargs(1)
     @functools.wraps(fn)
-    def daemon(args):
+    def daemon_ctl(args):
         command, = args
+        if command == 'status':
+            info(daemon.status())
+            return
+
         daemon.call(command)
 
-    return daemon
+    return daemon_ctl
 
 
 class DaemonGroup(object):
@@ -231,6 +235,6 @@ class Daemon(object):
             pid_file.write(str(pid))
 
     def call(self, method):
-        assert method in ('start', 'stop', 'restart', 'status', 'run')
+        assert method in ('start', 'stop', 'restart', 'run')
         method = getattr(self, method)
         return method()
