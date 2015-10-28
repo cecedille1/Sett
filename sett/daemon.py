@@ -229,3 +229,8 @@ class Daemon(object):
     def _set_pid(self, pid):
         with open(self.pid_file, 'w') as pid_file:
             pid_file.write(str(pid))
+
+    def call(self, method):
+        assert method in ('start', 'stop', 'restart', 'status', 'run')
+        method = getattr(self, method)
+        return method()
