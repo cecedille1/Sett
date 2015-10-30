@@ -4,7 +4,7 @@
 from paver.easy import task, consume_nargs, debug, info
 
 from sett.utils import optional_import
-docker = optional_import('docker')
+docker = optional_import('docker', 'docker-py')
 
 
 class Container(object):
