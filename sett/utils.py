@@ -6,18 +6,22 @@ import sys
 from paver.easy import debug, path, call_task, pushd, sh
 
 
-def optional_import(module_name):
+def optional_import(module_name, package_name=None):
     try:
         return __import__(module_name)
     except ImportError:
-        return FakeModule(module_name)
+        return FakeModule(package_name, module_name)
 
 
 class FakeModule(object):
-    def __init__(self, name):
+    def __init__(self, name, module_name):
         self._name = name
+        self._module = module_name
 
     def __getattr__(self, attr):
+        if self._module:
+            raise RuntimeError('Module {} provided by {} is not installed'.format(
+                self._name, self._module))
         raise RuntimeError('Module {} is not installed'.format(self._name))
 
 
