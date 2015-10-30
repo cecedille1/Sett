@@ -8,6 +8,10 @@ from sett import ROOT, which, defaults
 from sett.gem import run_ruby
 
 
+def get_compass_dir():
+    return ROOT.joinpath(defaults.COMPASS_DIR)
+
+
 def run_compass(*commands, **kw):
     return run_ruby(which.compass, *commands, **kw)
 
@@ -23,10 +27,10 @@ def compass(args, options):
 @task
 def watch():
     """Alias for compass watch"""
-    call_task('compass', args=['watch'])
+    call_task('compass', args=['watch', get_compass_dir()])
 
 
 @task
 def compile():
     """Alias for compass compile"""
-    call_task('compass', args=['compile'])
+    call_task('compass', args=['compile', get_compass_dir()])
