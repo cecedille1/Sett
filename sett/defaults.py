@@ -28,6 +28,7 @@ PYPI_PACKAGE_INDEX_IGNORE_SSL = True
 
 # The name of the directory containing compass sass sources
 COMPASS_DIR = 'compass'
+SCSS_LINT_CONFIG = 'compass/.scss-lint.yml'
 
 FLAKE8_EXTRA_ARGS = ['--max-line-length=120']
 
