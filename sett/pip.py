@@ -9,6 +9,11 @@ from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, i
 from sett import ROOT, defaults
 from sett.utils import BaseInstalledPackages
 
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
+
 
 VENV_BIN = path(sys.executable).dirname()
 VENV_DIR = VENV_BIN.dirname()
@@ -32,6 +37,15 @@ installed_packages = InstalledPackages()
 def pip(args):
     """Run a pip command"""
     pip_bin = VENV_BIN.joinpath('pip')
+
+    if args[0] == 'install':
+        if defaults.PYPI_PACKAGE_INDEX:
+            extra = ['--index-url', defaults.PYPI_PACKAGE_INDEX]
+            if defaults.PYPI_PACKAGE_INDEX_IGNORE_SSL:
+                url = urlparse(defaults.PYPI_PACKAGE_INDEX)
+                extra.extend(['--trusted-host', url.netloc])
+        args[1:1] = extra
+
     sh([pip_bin] + args)
 
 
@@ -39,20 +53,7 @@ def pip(args):
 @consume_args
 def pip_install(args, options):
     """Install a pip package"""
-    command = ['install']
-    if defaults.PYPI_PACKAGE_INDEX:
-        command.extend(['--index-url', defaults.PYPI_PACKAGE_INDEX])
-        if defaults.PYPI_PACKAGE_INDEX_IGNORE_SSL:
-            try:
-                from urlparse import urlparse
-            except ImportError:
-                from urllib.parse import urlparse
-
-            url = urlparse(defaults.PYPI_PACKAGE_INDEX)
-            command.extend(['--trusted-host', url.netloc])
-
-    command.extend(args)
-    call_task('pip', args=command)
+    call_task('pip', args=['install'] + args)
 
 
 @task

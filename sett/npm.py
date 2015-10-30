@@ -49,14 +49,15 @@ installed_packages = InstalledPackages()
 
 @task
 @consume_args
+def npm(args):
+    sh([which.npm] + args)
+
+
+@task
+@consume_args
 def npm_install(args):
     """Install a npm package"""
-    npm_command = [
-        which.npm,
-        'install',
-    ]
-    npm_command.extend(args)
-    sh(npm_command)
+    call_task('npm', ['install'] + args)
 
 
 @task

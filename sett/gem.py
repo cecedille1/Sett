@@ -77,6 +77,13 @@ def run_ruby(command, *args, **kw):
 @task
 @consume_args
 def gem(args):
+    if args[0] == 'install':
+        args[1:1] = [
+            '--no-user-install',
+            '--install-dir', GEM_HOME,
+            '--no-ri',
+            '--no-rdoc',
+        ]
     sh([which.gem] + args)
 
 
@@ -84,13 +91,7 @@ def gem(args):
 @consume_args
 def gem_install(args):
     """Install a gem"""
-    call_task('gem', [
-        'install',
-        '--no-user-install',
-        '--install-dir', GEM_HOME,
-        '--no-ri',
-        '--no-rdoc',
-    ] + args)
+    call_task('gem', ['install'] + args)
 
 
 @task
