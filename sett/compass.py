@@ -1,28 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import subprocess
-import os
-
-from paver.easy import debug, task, consume_args, call_task, info, environment
+import optparse
+from paver.easy import task, consume_args, call_task, cmdopts, path
 
 from sett import ROOT, which, defaults
-from sett.gem import GEM_HOME
+from sett.gem import run_ruby
 
 
 def run_compass(*commands, **kw):
-    command = [which.compass]
-    command.extend(commands)
-    command.append(ROOT.joinpath(getattr(environment, 'compass_root', defaults.COMPASS_DIR)))
-
-    info('Running: %s', ' '.join(command))
-    env = dict(os.environ)
-    env['GEM_HOME'] = GEM_HOME
-    compass = subprocess.Popen(command, env=env)
-    if not kw.get('background', False):
-        rc = compass.wait()
-        debug('compass returned %s', rc)
-    return compass
+    return run_ruby(which.compass, *commands, **kw)
 
 
 @task

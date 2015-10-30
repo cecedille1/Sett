@@ -4,9 +4,10 @@
 import os
 import subprocess
 
-from paver.easy import task, consume_args, call_task, debug, sh, might_call
+from paver.easy import task, consume_args, call_task, debug, sh, might_call, path, info
 
 from sett import defaults, which, ROOT
+from sett.bin import DirectorySearcher
 from sett.utils import BaseInstalledPackages
 
 
@@ -45,9 +46,32 @@ installed_gems = InstalledGems()
 @task
 @consume_args
 def ruby(args):
+    run_ruby(*args)
+
+
+def run_ruby(command, *args, **kw):
+    if '/' not in command:
+        searcher = DirectorySearcher(GEM_HOME.joinpath('bin'))
+        command = searcher.search(command)
+
+    if not path(command).exists():
+        raise RuntimeError('command {} does not exist'.format(command))
+
     env = dict(os.environ)
     env['GEM_HOME'] = GEM_HOME
-    sh([which.ruby] + args, env=env)
+
+    info('Running: ruby %s %s', command, ' '.join(args))
+
+    expected_returns = kw.get('expect', {0})
+    ruby = subprocess.Popen([which.ruby, command] + list(args), env=env)
+    if not kw.get('background', False):
+        rc = ruby.wait()
+        debug('Command returned %s', rc)
+        if expected_returns and rc not in expected_returns:
+            raise RuntimeError('{} returned a unexpected {}'.format(
+                command, rc
+            ))
+    return ruby
 
 
 @task
