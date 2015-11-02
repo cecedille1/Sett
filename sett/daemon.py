@@ -64,10 +64,13 @@ def daemon_task(fn):
 
 
 class DaemonGroup(object):
-    def __init__(self, daemons):
+    def __init__(self, daemons, name=None):
         self._daemons = daemons
+        self.name = name
 
     def __repr__(self):
+        if self.name:
+            return '<Daemons "{}">'.format(self.name)
         return '<Daemons {}>'.format(', '.join(d.name for d in self))
 
     def __iter__(self):
@@ -120,7 +123,7 @@ class Daemons(object):
         if name not in self._names:
             raise KeyError(name)
         if name in self._daemons_groups:
-            return DaemonGroup(self._daemons_groups[name])
+            return DaemonGroup(self._daemons_groups[name], name=name)
         return DaemonGroup([self._daemons[name]])
 
     def register_all(self, daemons, group=None):
