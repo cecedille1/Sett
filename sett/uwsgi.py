@@ -13,12 +13,10 @@ from sett.pip import VENV_DIR
 from sett.deploy_context import DeployContext
 
 UWSGI_PATH = ROOT.joinpath('var')
-PIDFILE = UWSGI_PATH.joinpath('uwsgi.pid')
 CONFIG = ROOT.joinpath('parts/uwsgi/uwsgi.xml')
 
 DeployContext.register(
     uwsgi={
-        'pidfile': PIDFILE,
         'config': CONFIG,
     },
     ctl='{} daemon'.format(path(sys.argv[0]).abspath()),
@@ -51,7 +49,10 @@ def log_dir():
 @daemon_task
 def daemon():
     try:
-        return Daemon([which.uwsgi, CONFIG], pid_file=PIDFILE)
+        return Daemon(
+            [which.uwsgi, CONFIG],
+            daemonize=lambda pidfile: ['--pidfile', pidfile, '--daemonize', '/dev/null'],
+        )
     except which.NotInstalled:
         return None
 
@@ -80,8 +81,7 @@ def uwsgi_xml():
     module, name = context['wsgi_application'].rsplit('.', 1)
     config = {
         'module': '{}:{}'.format(module, name),
-        'pidfile': PIDFILE,
-        'daemonize': LOGS.joinpath('uwsgi.log'),
+        'logto': LOGS.joinpath('uwsgi.log'),
         'processes': str(context['uwsgi.processes']),
         'home': VENV_DIR,
         'env': context['env'],
