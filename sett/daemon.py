@@ -9,6 +9,12 @@ import collections
 
 from paver.easy import path, info, consume_nargs, task, debug
 
+from paver.shell import _shlex_quote
+
+
+def shlex_quote(args):
+    return ' '.join(_shlex_quote(quoted) for quoted in args)
+
 from sett import ROOT
 
 
@@ -144,6 +150,18 @@ class Daemon(object):
         self.daemonize = daemonize
         self.env = env
         self._pid_file = pid_file
+
+    @property
+    def environ(self):
+        return self.env or {}
+
+    @property
+    def command(self):
+        return shlex_quote(self.get_command())
+
+    @property
+    def daemon_command(self):
+        return shlex_quote(self.get_daemon_command())
 
     @property
     def pid_file(self):
