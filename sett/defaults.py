@@ -99,3 +99,6 @@ MONIT_TEMPLATE = 'monit.conf.jinja'
 UWSGI_SOCKET_TYPE = 'unix'
 
 UWSGI_EXTRA = {}
+
+
+SUPERVISORDCONF = 'etc/supervisord/supervisord.conf'
