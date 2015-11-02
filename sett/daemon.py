@@ -194,13 +194,7 @@ class Daemon(object):
     def start(self):
         info('Starting %s', self)
 
-        daemonize = self.daemonize
-        if callable(daemonize):
-            daemonize = daemonize(self.pid_file)
-        elif daemonize is None:
-            daemonize = []
-
-        process = self.run(daemonize)
+        process = self._run(self.get_daemon_command())
         if self.daemonize:
             debug('Waiting for process')
             process.wait()
@@ -208,15 +202,27 @@ class Daemon(object):
             debug('Writing pid in %s', self.pid_file)
             self._set_pid(process.pid)
 
-    def run(self, args):
+    def get_daemon_command(self):
+        daemonize = self.daemonize
+        command = list(self.cmd)
+
+        if callable(daemonize):
+            daemonize = daemonize(self.pid_file)
+            command.extend(daemonize)
+        return command
+
+    def get_command(self):
+        return self.cmd
+
+    def run(self):
+        return self._run(self.get_command())
+
+    def _run(self, command):
         if self.env:
             env = dict(os.environ)
             env.update(self.env)
         else:
             env = os.environ
-
-        command = list(self.cmd)
-        command.extend(args)
 
         info('Running %s', ' '.join(command))
         return subprocess.Popen(command, env=env)
