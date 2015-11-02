@@ -117,6 +117,9 @@ class Daemons(object):
     def __iter__(self):
         return iter(self._daemons_groups[None])
 
+    def groups(self):
+        return (self[g] for g in self._daemons_groups if g)
+
     def __getitem__(self, name):
         if name == 'all':
             name = None
