@@ -139,3 +139,20 @@ def madge(args):
         ]
         command.extend(args)
         sh(command)
+
+
+@task
+@consume_args
+def uglify(args):
+    for name in args:
+        input = ROOT.joinpath('scripts/js/', name + '.js')
+        output = ROOT.joinpath('static/js/', name + '.js')
+
+        sh([
+            which.node,
+            which.uglifyjs,
+            input, '-o', output,
+            '--source-map', output + '.map',
+            '--source-map-url', name + '.js.map',
+            '--compress', '--mangle',
+        ])
