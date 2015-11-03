@@ -196,6 +196,9 @@ class Daemon(object):
 
     def start(self):
         info('Starting %s', self)
+        pid_dir = path(self.pid_file).dirname()
+        if not pid_dir.exists():
+            pid_dir.makedirs()
 
         process = self._run(self.get_daemon_command())
         if self.daemonize:
