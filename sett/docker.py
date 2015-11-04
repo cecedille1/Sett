@@ -15,6 +15,10 @@ class Container(object):
     def __str__(self):
         return self.name
 
+    @property
+    def ip(self):
+        return self.properties['NetworkSettings']['IPAddress']
+
     def exists(self):
         return self.properties is not None
 
