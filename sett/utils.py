@@ -77,7 +77,7 @@ class GitInstall(object):
     Example: add ``from sett.utils import *`` at the end of the ``__init__.py``
 
     >>> from paver.easy import *
-    >>> with GitInstall('gitla b.enix.org:grocher/sett.git') as sett_dir:
+    >>> with GitInstall('gitlab.enix.org:grocher/sett.git') as sett_dir:
     ...     # Git repository is cloned
     ...     with open(sett_dir.joinpath('sett/__init__.py', 'a+', encoding='utf-8')) as init:
     ...         init.write('\nfrom sett.utils import *\n')
@@ -98,24 +98,26 @@ class GitInstall(object):
     def __enter__(self):
         return self.open()
 
+    def install(self):
+        with pushd(self.open()):
+            sh([sys.executable, self.temp_dir.joinpath('setup.py'), 'install'])
+
     def close(self):
         if not self._opened:
             raise ValueError('Cannot close a unopened instance')
-        try:
-            with pushd(self.temp_dir):
-                sh([sys.executable, self.temp_dir.joinpath('setup.py'), 'install'])
-        finally:
-            self._temp_dir.close()
+        self._temp_dir.close()
         self._opened = False
 
     def __exit__(self, exc_value, exc_type, tb):
-        if exc_value is not None:
-            self._temp_dir.close()
-        else:
+        try:
+            if exc_value is not None:
+                self.install()
+        finally:
             self.close()
 
     def __call__(self):
         self.open()
+        self.install()
         self.close()
 
     def patch(self, patch_file, *args, **kw):
