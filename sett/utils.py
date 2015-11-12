@@ -3,6 +3,7 @@
 
 import tempfile
 import sys
+from sett import which
 from paver.easy import debug, path, call_task, pushd, sh
 
 
@@ -116,6 +117,14 @@ class GitInstall(object):
     def __call__(self):
         self.open()
         self.close()
+
+    def patch(self, patch_file, *args, **kw):
+        temp_dir = self.open()
+        strip = kw.pop('p', 1)
+        cmd = [which.patch, '--batch', '-p', str(strip), '-i', patch_file, '-d', temp_dir]
+        cmd.extend(args)
+        cmd.extend('--{}={}'.format(k, v) for k, v in kw.items())
+        sh(cmd)
 
 
 class LineReplacer(object):
