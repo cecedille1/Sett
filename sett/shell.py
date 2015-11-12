@@ -90,6 +90,13 @@ class Evaluation(collections.namedtuple('Evaluation', ['line', 'evaluation'])):
 
 
 class Executor(object):
+    """
+    A step by step python code executor.
+
+    It executes line by line a line of instructions separated by a ; and yields
+    a detailled version of the results of the operation.
+    """
+
     def __init__(self, code, stop_at_exception=True):
         self._locals = {}
         self._globals = globals()

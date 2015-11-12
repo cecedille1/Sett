@@ -89,6 +89,7 @@ class GitInstall(object):
         self._opened = False
 
     def open(self):
+        """Makes a shallow copy of the repository in a temporary directory"""
         if not self._opened:
             self.temp_dir = self._temp_dir.open()
             call_task('git_copy', args=[self.repo, self.temp_dir])
@@ -99,10 +100,12 @@ class GitInstall(object):
         return self.open()
 
     def install(self):
+        """Installs the software by calling setup.py install"""
         with pushd(self.open()):
             sh([sys.executable, self.temp_dir.joinpath('setup.py'), 'install'])
 
     def close(self):
+        """Closes the temporary directory"""
         if not self._opened:
             raise ValueError('Cannot close a unopened instance')
         self._temp_dir.close()
@@ -121,6 +124,9 @@ class GitInstall(object):
         self.close()
 
     def patch(self, patch_file, *args, **kw):
+        """
+        Apply a diff via the patch command on the cloned copy.
+        """
         temp_dir = self.open()
         strip = kw.pop('p', 1)
         cmd = [which.patch, '--batch', '-p', str(strip), '-i', patch_file, '-d', temp_dir]

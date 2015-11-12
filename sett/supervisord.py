@@ -16,6 +16,7 @@ PIDFILE = ROOT.joinpath('var/run/supervisor.pid')
 @task
 @consume_args
 def supervisorctl(args):
+    """Wrapper to launch supervisorctl"""
     sh([
         which.supervisorctl,
         '-c', ROOT.joinpath('etc/supervisord/supervisorctl.conf'),
@@ -24,6 +25,7 @@ def supervisorctl(args):
 
 @daemon_task
 def supervisord():
+    """Wrapper to control supervisord"""
     supervisord_conf = ROOT.joinpath(defaults.SUPERVISORDCONF)
     try:
         return Daemon(
@@ -53,6 +55,25 @@ def write_config(path, sections):
 
 
 def supervisord_task(fn):
+    """
+    The configuration files generator. It generates a list of files under
+    etc/supervisord, which are all included in supervisord.conf. A file is
+    written for each daemon and for each group. It also writes
+    supervisorctl.conf which is used by supervisorctl and is not included in
+    supervisord.conf
+
+    etc/supervisord
+    ├── daemons
+    │   ├── nginx.conf
+    │   ├── api.conf
+    │   ├── celery-worker.conf
+    │   └── web.conf
+    ├── groups
+    │   ├── backend.conf
+    │   └── frontend.conf
+    ├── supervisorctl.conf
+    └── supervisord.conf
+    """
     daemons = fn()
     if not daemons:
         return
