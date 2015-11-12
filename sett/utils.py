@@ -85,21 +85,27 @@ class GitInstall(object):
     def __init__(self, repo):
         self.repo = repo
         self._temp_dir = Tempdir()
+        self._opened = False
 
     def open(self):
-        self.temp_dir = self._temp_dir.open()
-        call_task('git_copy', args=[self.repo, self.temp_dir])
-
-    def __enter__(self):
-        self.open()
+        if not self._opened:
+            self.temp_dir = self._temp_dir.open()
+            call_task('git_copy', args=[self.repo, self.temp_dir])
+            self._opened = True
         return self.temp_dir
 
+    def __enter__(self):
+        return self.open()
+
     def close(self):
+        if not self._opened:
+            raise ValueError('Cannot close a unopened instance')
         try:
             with pushd(self.temp_dir):
                 sh([sys.executable, self.temp_dir.joinpath('setup.py'), 'install'])
         finally:
             self._temp_dir.close()
+        self._opened = False
 
     def __exit__(self, exc_value, exc_type, tb):
         if exc_value is not None:
