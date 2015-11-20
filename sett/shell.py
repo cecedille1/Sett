@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+
 import ast
 import sys
 import collections
@@ -7,6 +9,18 @@ import traceback
 import optparse
 
 from paver.easy import task, environment, consume_nargs, cmdopts
+
+if sys.version_info > (3, ):
+    text_type = str
+
+    def text_repr(fn):
+        return fn
+else:
+    text_type = unicode
+
+    def text_repr(fn):
+        fn.__name__ = '__unicode__'
+        return fn
 
 
 def shell():
@@ -36,8 +50,9 @@ class Line(collections.namedtuple('Line', ['ast', 'original'])):
             parsed = ast.parse(stripped)
             return Statement(parsed, original)
 
+    @text_repr
     def __str__(self):
-        return '>>> {}'.format(self.original)
+        return u'>>> {}'.format(self.original)
 
 
 class Statement(Line):
@@ -57,7 +72,7 @@ class Statement(Line):
 
     @property
     def code(self):
-        return compile(self.ast, self.original, 'exec')
+        return compile(self.ast, self.original.encode('utf-8'), 'exec')
 
 
 class Expression(Line):
@@ -70,23 +85,26 @@ class Expression(Line):
 
 
 class Failed(collections.namedtuple('Failed', ['line', 'error'])):
+    @text_repr
     def __str__(self):
-        return '{}\n{}'.format(self.line, self.error)
+        return u'{}\n{}'.format(self.line, self.error)
 
 
 class Success(collections.namedtuple('Success', ['line', 'additions', 'changes'])):
+    @text_repr
     def __str__(self):
-        buff = [str(self.line)]
+        buff = [text_type(self.line)]
         for k, v in self.additions.items():
-            buff.append('    {}: {}'.format(k, v))
+            buff.append(u'    {}: {}'.format(k, v))
         for k, (v1, v2) in self.changes.items():
-            buff.append('    {}: {} -> {}'.format(k, v1, v2))
-        return '\n'.join(buff)
+            buff.append(u'    {}: {} -> {}'.format(k, v1, v2))
+        return u'\n'.join(buff)
 
 
 class Evaluation(collections.namedtuple('Evaluation', ['line', 'evaluation'])):
+    @text_repr
     def __str__(self):
-        return '{}\n    {}'.format(self.line, self.evaluation)
+        return u'{}\n    {}'.format(self.line, self.evaluation)
 
 
 class Executor(object):
@@ -100,7 +118,11 @@ class Executor(object):
     def __init__(self, code, stop_at_exception=True):
         self._locals = {}
         self._globals = globals()
-        self._code = [Line.build(line) for line in code.split(';')]
+
+        if not isinstance(code, text_type):
+            code = code.decode(sys.getfilesystemencoding())
+
+        self._code = [Line.build(line) for line in code.split(u';')]
         self._continue = not stop_at_exception
 
     def __call__(self):
@@ -183,4 +205,4 @@ def exec_(args, options):
     """
     x = Executor(args[0], stop_at_exception=options.stop_at_exception)
     for r in x():
-        sys.stdout.write('{}\n'.format(r))
+        sys.stdout.write(u'{}\n'.format(r))
