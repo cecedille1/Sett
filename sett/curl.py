@@ -58,7 +58,7 @@ def curl(args, options):
     headers.update(defaults.CURL_EXTRA_HEADERS)
 
     if source == '-':
-        data = sys.stdin
+        data = sys.stdin.read()
     elif source:
         data = open(source, 'rb')
     else:
