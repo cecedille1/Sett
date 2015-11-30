@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 __all__ = [
     'SettTaskFinder',
