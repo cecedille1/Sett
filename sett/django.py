@@ -99,7 +99,7 @@ def django(args):
     if not args:
         args = ['--help']
     elif args[0] == 'runserver':
-        return call_task('_runserver', args=['8000'])
+        return call_task('_runserver', args=[default.HTTP_WSGI_PORT])
 
     from django.core.management import execute_from_command_line
     command = ['django']
