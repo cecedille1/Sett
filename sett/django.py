@@ -14,7 +14,7 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path,
                         environment)
 
-from sett import which, DeployContext
+from sett import which, DeployContext, defaults
 
 
 @task
@@ -99,7 +99,7 @@ def django(args):
     if not args:
         args = ['--help']
     elif args[0] == 'runserver':
-        return call_task('_runserver', args=[default.HTTP_WSGI_PORT])
+        return call_task('_runserver', args=[defaults.HTTP_WSGI_PORT])
 
     from django.core.management import execute_from_command_line
     command = ['django']
