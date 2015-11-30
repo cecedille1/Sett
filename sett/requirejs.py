@@ -120,9 +120,10 @@ Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
     rjs_process = subprocess.Popen(
         command,
         stdout=null,
-        stderr=null,
     )
-    rjs_process.wait()
+    rc = rjs_process.wait()
+    if rc != 0:
+        raise RuntimeError()
     null.close()
 
 
