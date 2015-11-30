@@ -38,6 +38,7 @@ class Threaded(object):
         self._queue = queue.Queue()
         self._threads = [threading.Thread(target=self._worker(x)) for x in range(n)]
         self.started = False
+        self.failed_tasks = []
 
     def for_each(self, iterable):
         for i in iterable:
@@ -60,6 +61,8 @@ class Threaded(object):
                     debug('%s: Got a task', n)
                     self._fn(*args, **kw)
                     debug('%s: Finishing a task', n)
+                except Exception:
+                    self.failed_tasks.append((args, kw))
                 finally:
                     debug('%s: I see the light at the end of the tunnel', n)
                     self._queue.task_done()
@@ -82,5 +85,8 @@ class Threaded(object):
         debug('Waiting threads')
         for t in self._threads:
             t.join()
+
+        if self.failed_tasks:
+            raise RuntimeError('Those tasks failed: {}'.format(self.failed_tasks))
 
         return True
