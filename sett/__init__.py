@@ -22,6 +22,7 @@ from sett.parallel import parallel
 from sett.deploy_context import DeployContext
 
 from paver.path import path
+from paver.easy import debug
 from paver.tasks import environment, Task
 
 ALL_LIBS = [p.namebase for p in path(__file__).dirname().files('*.py')]
@@ -46,7 +47,8 @@ class SettTaskFinder(object):
                 module = importlib.import_module('sett.' + enabled_lib)
                 for var in vars(module).values():
                     yield var
-            except ImportError:
+            except ImportError as ie:
+                debug('Error loading %s: %s', module, ie)
                 pass
 
     def get_tasks(self):
