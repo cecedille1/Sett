@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-USE_THREADING = True
+import os
+
+USE_THREADING = os.environ.get('LINEAR', 'no').lower() == 'yes'
 
 HTTP_WSGI_IP = ''
 HTTP_WSGI_PORT = 8000
