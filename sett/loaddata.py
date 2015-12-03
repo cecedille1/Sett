@@ -20,8 +20,15 @@ def loaddata(args):
     try:
         handle = open(filepath, 'r')
         models_by_class = collections.defaultdict(list)
+        related_models = list()
+
         for model in serializers.deserialize('json', handle):
-            models_by_class[model.object.__class__].append(model.object)
+            model_class = model.object.__class__
+            models_by_class[model_class].append(model.object)
+
+            for field, values in model.m2m_data.items():
+                if values:
+                    related_models.append((model.object, field, values))
     finally:
         handle.close()
 
@@ -35,12 +42,24 @@ def loaddata(args):
             proceed = Proceed(model_class, models_list)
             waiting_room.enter(dependencies, proceed)
 
+        if waiting_room:
+            raise RuntimeError(repr(waiting_room))
+
+    for model, field, values in related_models:
+        debug('Adding %s to %s(%s)', values, model, field)
+        getattr(model, field).add(*values)
+
 
 class WaitingRoom(object):
     def __init__(self):
         self._present = set()
         self._waiting_room = collections.defaultdict(list)
         self._index = collections.defaultdict(set)
+
+    def __bool__(self):
+        return bool(self._waiting_room)
+
+    __nonzero__ = __bool__
 
     def __repr__(self):
         return '<W {}>'.format(self._waiting_room)
@@ -54,7 +73,7 @@ class WaitingRoom(object):
         self._present.add(dep)
         for dependencies_set in self._index[dep]:
             if self._is_ready(dependencies_set):
-                for action in self._waiting_room.pop(dependencies_set):
+                for action in self._waiting_room.pop(dependencies_set, []):
                     self._run(action)
 
     def enter(self, dependencies, action):
