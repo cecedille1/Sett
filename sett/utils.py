@@ -11,22 +11,19 @@ from paver.tasks import environment, Task
 
 
 def task_name(name):
+    """
+    Set the name of the task
+
+    >>> @task
+    >>> @task_name('django')
+    >>> def django_task():
+    ...     pass
+    >>> environment.get_task('django')
+    """
     def decorator(fn):
         fn.__name__ = name
         return fn
     return decorator
-
-
-def optional_import(module_name, package_name=None):
-    try:
-        module = __import__(module_name)
-        if '.' in module_name:
-            for segment in module_name.split('.')[1:]:
-                module = getattr(module, segment)
-        return module
-    except ImportError as ie:
-        debug('Cannot import %s: %s', module_name, ie)
-        return FakeModule(package_name, module_name)
 
 
 class TaskAlternativeTaskFinder(object):
@@ -84,6 +81,26 @@ class TaskAlternative(object):
 
 
 task_alternative = TaskAlternative()
+
+
+def optional_import(module_name, package_name=None):
+    """
+    Tries to import a module and returns either the module or a proxy class
+    that raises when accessing an attribute.
+
+    >>> models = optional_import('django.db.models')
+    >>> models.Model
+        RuntimeError('module django is not installed')
+    """
+    try:
+        module = __import__(module_name)
+        if '.' in module_name:
+            for segment in module_name.split('.')[1:]:
+                module = getattr(module, segment)
+        return module
+    except ImportError as ie:
+        debug('Cannot import %s: %s', module_name, ie)
+        return FakeModule(package_name, module_name)
 
 
 class FakeModule(object):
