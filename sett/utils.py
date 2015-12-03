@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import heapq
 import tempfile
+import collections
 import sys
 from sett import which
 from paver.easy import debug, path, call_task, pushd, sh
+from paver.tasks import environment, Task
 
 
 def task_name(name):
@@ -16,9 +19,71 @@ def task_name(name):
 
 def optional_import(module_name, package_name=None):
     try:
-        return __import__(module_name)
-    except ImportError:
+        module = __import__(module_name)
+        if '.' in module_name:
+            for segment in module_name.split('.')[1:]:
+                module = getattr(module, segment)
+        return module
+    except ImportError as ie:
+        debug('Cannot import %s: %s', module_name, ie)
         return FakeModule(package_name, module_name)
+
+
+class TaskAlternativeTaskFinder(object):
+    def __init__(self, ta):
+        self.ta = ta
+
+    def get_tasks(self):
+        return [Task(x) for x in self.ta]
+
+    def get_task(self, name):
+        if name not in self.ta:
+            return None
+        return Task(self.ta[name])
+
+
+class TaskAlternative(object):
+    def __init__(self):
+        self._alternatives = collections.defaultdict(list)
+        self.poisonned = False
+
+    def __repr__(self):
+        return '\n'.format(
+            '{}: {}'.format(name, ', '.join(str(alt) for alt in alts))
+            for name, alts in self._alternatives.items()
+        )
+
+    def __iter__(self):
+        for name in self._alternatives:
+            yield self[name]
+
+    def __contains__(self, name):
+        return name in self._alternatives
+
+    def __getitem__(self, name):
+        best = heapq.nsmallest(1, self._alternatives[name])
+        if not best:
+            raise KeyError(name)
+        weight, fn = best[0]
+        return fn
+
+    def poison(self):
+        if self.poisonned:
+            return
+
+        debug('Add TaskAlternativeTaskFinder(%r)', self)
+        environment.task_finders.append(TaskAlternativeTaskFinder(self))
+        self.poisonned = True
+
+    def __call__(self, weight):
+        def decorator(fn):
+            self.poison()
+            heapq.heappush(self._alternatives[fn.__name__], (weight, fn))
+            return fn
+        return decorator
+
+
+task_alternative = TaskAlternative()
 
 
 class FakeModule(object):

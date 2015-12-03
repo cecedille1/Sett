@@ -8,8 +8,8 @@ import collections
 import traceback
 import optparse
 
-from paver.easy import task, environment, consume_nargs, cmdopts
-from sett.utils import task_name
+from sett.utils import task_alternative, task_name
+from paver.easy import task, consume_nargs, cmdopts
 
 if sys.version_info > (3, ):
     text_type = str
@@ -23,13 +23,24 @@ else:
         fn.__name__ = '__unicode__'
         return fn
 
-
-def shell():
+try:
     from IPython import embed
-    embed()
 
-if environment.get_task('shell') is None:
-    shell = task(shell)
+    @task_alternative(20)
+    @task_name('shell')
+    def ipython_shell():
+        embed()
+except ImportError:
+    pass
+
+
+@task_alternative(30)
+@task_name('shell')
+def shell():
+    import readline  # noqa
+    import code
+    shell = code.InteractiveConsole()
+    shell.interact()
 
 
 try:

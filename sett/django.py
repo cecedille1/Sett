@@ -15,6 +15,7 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         environment)
 
 from sett import which, DeployContext, defaults
+from sett.utils import task_alternative
 
 
 @task
@@ -234,7 +235,7 @@ def messages():
     call_task('django_cmd', args=['compilemessages'])
 
 
-@task
+@task_alternative(10)
 def shell():
     """alias for `django shell`"""
     call_task('django_cmd', args=['shell'])
