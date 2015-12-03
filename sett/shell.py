@@ -9,6 +9,7 @@ import traceback
 import optparse
 
 from paver.easy import task, environment, consume_nargs, cmdopts
+from sett.utils import task_name
 
 if sys.version_info > (3, ):
     text_type = str
@@ -135,11 +136,6 @@ class Executor(object):
                     break
 
 
-def _rename(fn):
-    fn.__name__ = 'exec'
-    return fn
-
-
 @task
 @consume_nargs(1)
 @cmdopts([
@@ -151,7 +147,7 @@ def _rename(fn):
         help='Keep running when an exception is raised',
     )
 ])
-@_rename
+@task_name('exec')
 def exec_(args, options):
     """
     Execute a snippet.

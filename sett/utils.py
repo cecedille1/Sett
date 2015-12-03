@@ -7,6 +7,13 @@ from sett import which
 from paver.easy import debug, path, call_task, pushd, sh
 
 
+def task_name(name):
+    def decorator(fn):
+        fn.__name__ = name
+        return fn
+    return decorator
+
+
 def optional_import(module_name, package_name=None):
     try:
         return __import__(module_name)
