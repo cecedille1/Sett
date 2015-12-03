@@ -49,6 +49,10 @@ def curl(args, options):
     requests = optional_import('requests')
     remote = options.remote or 'http://localhost:{}'.format(defaults.HTTP_WSGI_PORT)
     url, source = args
+
+    if url == 'GET' or url == 'HEAD':
+        options.method, url, source = url, source, None
+
     headers = {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
