@@ -68,7 +68,7 @@ class TaskAlternative(object):
         if self.poisonned:
             return
 
-        debug('Add TaskAlternativeTaskFinder(%r)', self)
+        debug('Add TaskAlternativeTaskFinder()')
         environment.task_finders.append(TaskAlternativeTaskFinder(self))
         self.poisonned = True
 
