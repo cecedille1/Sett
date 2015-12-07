@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
+import json
 import optparse
-from paver.easy import task, cmdopts, consume_nargs
 
-from sett import defaults, __version__ as sett_version
+from paver.easy import task, cmdopts, consume_nargs
+from sett import defaults, __version__ as sett_version, optional_import
+
+requests = optional_import('requests')
 
 
 @task
@@ -42,12 +46,10 @@ from sett import defaults, __version__ as sett_version
 @consume_nargs(2)
 def curl(args, options):
     """Usage: url source"""
-
-    import time
-    from sett.utils import optional_import
-
-    requests = optional_import('requests')
-    remote = options.remote or 'http://localhost:{}'.format(defaults.HTTP_WSGI_PORT)
+    remote = options.remote or 'http://{}:{}'.format(
+        defaults.HTTP_WSGI_IP,
+        defaults.HTTP_WSGI_PORT
+    )
     url, source = args
 
     if url == 'GET' or url == 'HEAD':
@@ -92,7 +94,6 @@ def curl(args, options):
         for line in req.iter_lines():
             sys.stdout.write(line.decode('utf-8'))
     elif req.headers.get('content-type', '').startswith('application/json'):
-        import json
         req.encoding = 'utf-8'
         json.dump(req.json(), sys.stdout, indent=4)
     else:
