@@ -13,7 +13,9 @@ except ImportError:
     import sett
 
 
-from sett import DeployContext, defaults
+from paver.easy import task, call_task
+from sett import DeployContext, defaults, ROOT
+from sett.source import FileReplacer
 
 
 defaults.UWSGI_SOCKET_TYPE = 'http'
@@ -24,3 +26,9 @@ def set_wsgi_application():
     return {
         'wsgi_application': 'sett.pavement'
     }
+
+
+@task
+@FileReplacer(ROOT.joinpath('requirements_minimal.txt'), ROOT.joinpath('requirements.txt'))
+def make_minimal():
+    call_task('sett.build.make')

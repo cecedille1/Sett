@@ -5,12 +5,13 @@
 import sys
 import os
 
-from packaging.version import Version
 
 from paver.easy import task, call_task, environment, path, no_help, needs, debug, info
 from paver.setuputils import setup, _get_distribution
 
-from sett import ROOT
+from sett import ROOT, optional_import
+
+version = optional_import('packaging.version')
 
 
 @task
@@ -36,7 +37,7 @@ def make(options):
     """Overrides sdist to make sure that our setup.py is generated."""
     call_task('sdist', options={'formats': ['gztar', 'zip']})
 
-    if not Version(options.setup.version).is_prerelease:
+    if not version.Version(options.setup.version).is_prerelease:
         call_task('link_latest')
 
 
