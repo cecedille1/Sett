@@ -40,7 +40,8 @@ class TaskAlternativeTaskFinder(object):
 
 
 class TaskAlternative(object):
-    def __init__(self):
+    def __init__(self, environment):
+        self._env = environment
         self._alternatives = collections.defaultdict(list)
         self.poisonned = False
 
@@ -69,18 +70,18 @@ class TaskAlternative(object):
             return
 
         debug('Add TaskAlternativeTaskFinder()')
-        environment.task_finders.append(TaskAlternativeTaskFinder(self))
+        self._env.task_finders.append(TaskAlternativeTaskFinder(self))
         self.poisonned = True
 
-    def __call__(self, weight):
+    def __call__(self, weight, name=None):
         def decorator(fn):
             self.poison()
-            heapq.heappush(self._alternatives[fn.__name__], (weight, fn))
+            heapq.heappush(self._alternatives[name or fn.__name__], (weight, fn))
             return fn
         return decorator
 
 
-task_alternative = TaskAlternative()
+task_alternative = TaskAlternative(environment)
 
 
 def optional_import(module_name, package_name=None):
@@ -100,7 +101,7 @@ def optional_import(module_name, package_name=None):
         return module
     except ImportError as ie:
         debug('Cannot import %s: %s', module_name, ie)
-        return FakeModule(package_name, module_name)
+        return FakeModule(module_name, package_name)
 
 
 class FakeModule(object):
@@ -202,7 +203,7 @@ class GitInstall(object):
 
     def __exit__(self, exc_value, exc_type, tb):
         try:
-            if exc_value is not None:
+            if exc_value is None:
                 self.install()
         finally:
             self.close()
@@ -255,16 +256,26 @@ class LineReplacer(object):
         self.lines = self.fd.readlines()
         return self
 
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.file)
+
     def __iter__(self):
+        if self.lines is None:
+            raise RuntimeError('{:r} is not opened')
+
         return enumerate(self.lines)
 
     def close(self):
+        if self.fd is None:
+            return
+
         try:
             self.fd.seek(0)
             self.fd.truncate()
             self.fd.writelines(self.lines)
         finally:
             self.fd.close()
+        self.fd = None
 
     def __enter__(self):
         return self.open()
