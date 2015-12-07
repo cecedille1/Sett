@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+import os
 import subprocess
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
@@ -14,7 +14,7 @@ from sett.npm import NODE_MODULES
 
 @task
 @consume_args
-def rjs(args, options):
+def rjs(args):
     """Usage: rjs APP [APP...]
 Compile a requirejs app.
 
@@ -33,10 +33,14 @@ to the STATICFILES_DIRS setting before loading files.
     outdir = ROOT.joinpath(getattr(environment,
                                    'requirejs_output_directory',
                                    defaults.RJS_BUILD_DIR))
+    force = '--force' in args
+    if force:
+        args.remove('--force')
 
     @parallel
-    def build(*args):
-        call_task('rjs_build', args=args)
+    def build(rjs_build):
+        if force or rjs_build.should_build():
+            rjs_build.build()
 
     with Tempdir() as tempdir:
         source = tempdir.joinpath('js')
@@ -57,7 +61,7 @@ to the STATICFILES_DIRS setting before loading files.
         try:
             for name in args:
                 out = ROOT.joinpath(outdir, name + '.js')
-                build(defaults.RJS_APP_DIR + '/' + name, source, out)
+                build(RJSBuild(defaults.RJS_APP_DIR + '/' + name, source, out))
         finally:
             build.wait()
 
@@ -83,48 +87,101 @@ def virtual_static(args):
             call_task('django', args=args)
 
 
-@task
-@no_help
-@consume_nargs(3)
-def rjs_build(args):
-    """Do the rjs compilation
+class RJSBuild(object):
+    def __init__(self, name, source, out):
+        self.name = name
+        self.source = path(source)
+        self.out = path(out)
 
-Usage: rjs_build `name` `js source directory ` `output`
-Example: rjs_build app/index /tmp/static/ /project/static/js/index.js
-    """
-    name, source, out = args
-    source = path(source)
-    config_js = source.joinpath(defaults.RJS_CONFIG)
-    almond = NODE_MODULES.joinpath('almond/almond')
+    @property
+    def config_js(self):
+        return self.source.joinpath(defaults.RJS_CONFIG)
 
-    info('Writing %s', out)
+    @property
+    def almond(self):
+        return NODE_MODULES.joinpath('almond/almond')
 
-    null = open('/dev/null', 'w')
-    command = [
-        which.node,
-        which.search('r.js'),
-        '-o',
-        'baseUrl={}'.format(source),
-        'mainConfigFile={}'.format(config_js),
-        'optimize={}'.format(defaults.RJS_OPTIMIZE),
-        'generateSourceMaps=true',
-        'preserveLicenseComments=false',
-        'skipDirOptimize=false',
-        'name={}'.format(source.relpathto(almond)),
-        'include={}'.format(name),
-        'insertRequire={}'.format(name),
-        'out={}'.format(out),
-        'wrap=true',
-    ]
-    debug('Running: %s', ' '.join(command))
-    rjs_process = subprocess.Popen(
-        command,
-        stdout=null,
-    )
-    rc = rjs_process.wait()
-    if rc != 0:
-        raise RuntimeError()
-    null.close()
+    def should_build(self):
+        ofc = self.out_file_cache()
+        debug('Read cache from %s', ofc)
+        try:
+            out_build_time = self.out.stat().st_mtime
+        except OSError:
+            return True
+
+        try:
+            dep_write_time = os.stat(self.config_js).st_mtime
+            with open(ofc, 'r') as file:
+                for line in file:
+                    if '!' in line:
+                        continue
+                    dep_write_time = max(dep_write_time, os.stat(line.strip()).st_mtime)
+        except OSError as e:
+            debug('Choked on %s: %s', line, e)
+            return True
+
+        debug('out written at %s, max(deps) at %s', out_build_time, dep_write_time)
+        # Return should_write = True when the last dependency was written after
+        return dep_write_time > out_build_time
+
+    def out_file_cache(self):
+        return self.out.dirname().joinpath('.{}.files'.format(self.out.basename()))
+
+    def build(self):
+        info('Writing %s', self.out)
+        command = [
+            which.node,
+            which.search('r.js'),
+            '-o',
+            'baseUrl={}'.format(self.source),
+            'mainConfigFile={}'.format(self.config_js),
+            'optimize={}'.format(defaults.RJS_OPTIMIZE),
+            'generateSourceMaps=true',
+            'preserveLicenseComments=false',
+            'skipDirOptimize=false',
+            'name={}'.format(self.source.relpathto(self.almond)),
+            'include={}'.format(self.name),
+            'insertRequire={}'.format(self.name),
+            'out={}'.format(self.out),
+            'wrap=true',
+        ]
+        debug('Running: %s', ' '.join(command))
+        rjs_process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+        )
+        try:
+            files = self.parse_output(rjs_process.stdout)
+        finally:
+            rc = rjs_process.wait()
+
+        if rc != 0:
+            raise RuntimeError('r.js returned with {}'.format(rc))
+        self.write_cache(files)
+
+    def parse_output(self, stdout):
+        for line in stdout:
+            debug(line)
+            if line.startswith(b'-------------'):
+                break
+        else:
+            raise RuntimeError('r.js did not write the expected marker')
+
+        files = []
+        for line in stdout:
+            # resolve path
+            line = line.decode('utf-8').strip()
+            if line:
+                files.append(path(line).realpath())
+        return files
+
+    def write_cache(self, files):
+        out_path = self.out_file_cache()
+        debug('Writing cache in %s', out_path)
+        with open(out_path, 'w') as out_file:
+            for file in files:
+                out_file.write(str(file))
+                out_file.write('\n')
 
 
 @task
