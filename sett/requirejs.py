@@ -24,15 +24,13 @@ bootstrap. It requires `/STATIC_ROOT/js/config.js` and
 `/STATIC_ROOT/js/app/x.js`. The rjs optimizer will optimize app/x and write the
 output in `OUTPUT/x.js`.
 
-OUTPUT is the value of 'paver.environment.requirejs_output_directory' and
-defaults to 'ROOT/build/static/js/'.
+OUTPUT is the value of ``defaults.RJS_BUILD_DIR`` and defaults to
+``ROOT/build/static/js/``.
 
 If the django settings have a value STATICFILES_DIRS_DEV, it will be appended
 to the STATICFILES_DIRS setting before loading files.
     """
-    outdir = ROOT.joinpath(getattr(environment,
-                                   'requirejs_output_directory',
-                                   defaults.RJS_BUILD_DIR))
+    outdir = ROOT.joinpath(defaults.RJS_BUILD_DIR)
     force = '--force' in args
     if force:
         args.remove('--force')
@@ -187,6 +185,9 @@ class RJSBuild(object):
 @task
 @consume_args
 def madge(args):
+    """
+    Runs a madge dependency analysis
+    """
     with Tempdir() as tempdir:
         call_task('virtual_static', args=[tempdir])
         command = [
