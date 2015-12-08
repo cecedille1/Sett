@@ -38,10 +38,13 @@ sys.path.append(ROOT)
 
 
 class SettTaskFinder(object):
+    def __init__(self, enabled_libs, disabled_libs):
+        self.enabled_libs = enabled_libs
+        self.disabled_libs = disabled_libs
+
     def _load(self):
-        enabled_libs = ENABLED_LIBS or ALL_LIBS
-        for enabled_lib in enabled_libs:
-            if enabled_lib in DISABLED_LIBS:
+        for enabled_lib in self.enabled_libs:
+            if enabled_lib in self.disabled_libs:
                 continue
             try:
                 module = importlib.import_module('sett.' + enabled_lib)
@@ -60,4 +63,4 @@ class SettTaskFinder(object):
         return
 
 
-environment.task_finders.append(SettTaskFinder())
+environment.task_finders.append(SettTaskFinder(ENABLED_LIBS or ALL_LIBS, DISABLED_LIBS))
