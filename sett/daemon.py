@@ -68,6 +68,10 @@ class DaemonGroup(object):
         self._daemons = daemons
         self.name = name
 
+    def __eq__(self, other):
+        return (isinstance(other, DaemonGroup) and
+                set(self._daemons) == set(other._daemons))
+
     def __repr__(self):
         if self.name:
             return '<Daemons "{}">'.format(self.name)
@@ -179,6 +183,16 @@ class Daemon(object):
     def __repr__(self):
         return '<Daemon {}>'.format(self.name)
 
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return (isinstance(other, Daemon) and
+                self.name == other.name and
+                self.cmd == other.cmd and
+                self.daemonize == other.daemonize and
+                self.env == other.env)
+
     def status(self):
         pid = self._get_pid()
         if not pid:
@@ -214,6 +228,8 @@ class Daemon(object):
 
         if callable(daemonize):
             daemonize = daemonize(self.pid_file)
+            command.extend(daemonize)
+        elif isinstance(daemonize, (list, tuple)):
             command.extend(daemonize)
         return command
 
