@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# flake8: noqa
 
 __version__ = '0.9.2'
 
 __all__ = [
-    'SettTaskFinder',
     'which',
     'optional_import',
     'parallel',
     'task_alternative',
+    'DeployContext',
 ]
 
 import os
