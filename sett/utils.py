@@ -27,13 +27,19 @@ def task_name(name):
 
 
 class TaskAlternativeTaskFinder(object):
-    def __init__(self, ta):
+    def __init__(self, loader, ta):
+        self.loader = loader
         self.ta = ta
 
+    def __repr__(self):
+        return 'TaskFinder<{}>'.format(self.ta)
+
     def get_tasks(self):
+        self.loader.get_tasks()
         return list(self.ta)
 
     def get_task(self, name):
+        self.loader.get_tasks()
         if name not in self.ta:
             return None
         return self.ta[name]
