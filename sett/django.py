@@ -14,8 +14,7 @@ from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path,
                         environment)
 
-from sett import which, DeployContext, defaults
-from sett.utils import task_alternative
+from sett import which, DeployContext, defaults, task_alternative
 
 
 @task

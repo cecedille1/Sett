@@ -9,6 +9,7 @@ __all__ = [
     'which',
     'optional_import',
     'parallel',
+    'task_alternative',
 ]
 
 import os
@@ -20,6 +21,7 @@ from sett.utils import optional_import
 from sett.paths import ROOT
 from sett.parallel import parallel
 from sett.deploy_context import DeployContext
+from sett.utils import TaskAlternative, TaskAlternativeTaskFinder
 
 from paver.path import path
 from paver.easy import debug
@@ -35,6 +37,9 @@ if environment.pavement:
     ENABLED_LIBS.update(getattr(environment.pavement, 'ENABLED_LIBS', []))
 
 sys.path.append(ROOT)
+
+
+task_alternative = TaskAlternative(environment)
 
 
 class SettTaskFinder(object):
@@ -63,4 +68,7 @@ class SettTaskFinder(object):
         return
 
 
-environment.task_finders.append(SettTaskFinder(ENABLED_LIBS or ALL_LIBS, DISABLED_LIBS))
+environment.task_finders.extend([
+    TaskAlternativeTaskFinder(loader, task_alternative),
+    SettTaskLoader(environment, ENABLED_LIBS or ALL_LIBS, DISABLED_LIBS),
+])

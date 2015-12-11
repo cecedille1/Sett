@@ -8,7 +8,9 @@ import collections
 import traceback
 import optparse
 
-from sett.utils import task_alternative, task_name
+from sett import task_alternative
+from sett.utils import task_name
+
 from paver.easy import task, consume_nargs, cmdopts
 
 if sys.version_info > (3, ):

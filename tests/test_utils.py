@@ -56,22 +56,6 @@ class TestTaskAlternative(unittest.TestCase):
 
         assert self.ta['a'] is b
 
-    def test_poison(self):
-        assert sum(isinstance(tf, TaskAlternativeTaskFinder)
-                   for tf in self.env.task_finders) == 0
-
-        @self.ta(2)
-        def a():
-            pass
-
-        @self.ta(1, name='a')
-        def b():
-            pass
-
-        # Assert only one instance of TaskAlternativeTaskFinder is inserted
-        assert sum(isinstance(tf, TaskAlternativeTaskFinder)
-                   for tf in self.env.task_finders) == 1
-
 
 def test_optional_import():
     from sett import utils

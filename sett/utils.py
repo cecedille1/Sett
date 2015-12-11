@@ -7,7 +7,7 @@ import collections
 import sys
 from sett import which
 from paver.easy import debug, path, call_task, pushd, sh
-from paver.tasks import environment, Task
+from paver.tasks import Task
 
 
 def task_name(name):
@@ -40,8 +40,8 @@ class TaskAlternativeTaskFinder(object):
 
 
 class TaskAlternative(object):
-    def __init__(self, environment):
-        self._env = environment
+    def __init__(self, env):
+        self._env = env
         self._alternatives = collections.defaultdict(list)
         self.poisonned = False
 
@@ -65,23 +65,11 @@ class TaskAlternative(object):
         weight, fn = best[0]
         return fn
 
-    def poison(self):
-        if self.poisonned:
-            return
-
-        debug('Add TaskAlternativeTaskFinder()')
-        self._env.task_finders.append(TaskAlternativeTaskFinder(self))
-        self.poisonned = True
-
     def __call__(self, weight, name=None):
         def decorator(fn):
-            self.poison()
             heapq.heappush(self._alternatives[name or fn.__name__], (weight, fn))
             return fn
         return decorator
-
-
-task_alternative = TaskAlternative(environment)
 
 
 def optional_import(module_name, package_name=None):
