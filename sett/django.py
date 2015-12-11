@@ -234,7 +234,8 @@ def messages():
     call_task('django_cmd', args=['compilemessages'])
 
 
-@task_alternative(10)
-def shell():
+@task
+@task_alternative(10, 'shell')
+def django_shell():
     """alias for `django shell`"""
     call_task('django_cmd', args=['shell'])

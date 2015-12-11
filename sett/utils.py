@@ -31,12 +31,12 @@ class TaskAlternativeTaskFinder(object):
         self.ta = ta
 
     def get_tasks(self):
-        return [Task(x) for x in self.ta]
+        return list(self.ta)
 
     def get_task(self, name):
         if name not in self.ta:
             return None
-        return Task(self.ta[name])
+        return self.ta[name]
 
 
 class TaskAlternative(object):
@@ -46,8 +46,10 @@ class TaskAlternative(object):
         self.poisonned = False
 
     def __repr__(self):
-        return '\n'.format(
-            '{}: {}'.format(name, ', '.join(str(alt) for alt in alts))
+        return '; '.join(
+            '{}: {}'.format(
+                name, ', '.join('{}({})'.format(fn.shortname, w) for w, fn in alts)
+            )
             for name, alts in self._alternatives.items()
         )
 
@@ -67,7 +69,9 @@ class TaskAlternative(object):
 
     def __call__(self, weight, name=None):
         def decorator(fn):
-            heapq.heappush(self._alternatives[name or fn.__name__], (weight, fn))
+            if not isinstance(fn, Task):
+                fn = Task(fn)
+            heapq.heappush(self._alternatives[name or fn.shortname], (weight, fn))
             return fn
         return decorator
 

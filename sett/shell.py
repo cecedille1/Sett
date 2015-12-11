@@ -28,16 +28,14 @@ else:
 try:
     from IPython import embed
 
-    @task_alternative(20)
-    @task_name('shell')
-    def ipython_shell():
+    @task_alternative(20, 'shell')
+    def ishell():
         embed()
 except ImportError:
     pass
 
 
 @task_alternative(30)
-@task_name('shell')
 def shell():
     import readline  # noqa
     import code
