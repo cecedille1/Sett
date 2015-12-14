@@ -13,6 +13,11 @@ def get_compass_dir():
 
 
 def run_compass(*commands, **kw):
+    if not commands:
+        commands = ('compile', )
+
+    if commands[0] in ('compile', 'watch') and len(commands) == 1:
+        commands = [commands[0], get_compass_dir()]
     return run_ruby(which.compass, *commands, **kw)
 
 
