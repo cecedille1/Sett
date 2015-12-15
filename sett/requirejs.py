@@ -237,6 +237,11 @@ def virtual_static(args):
     with override_settings(STATIC_ROOT=tempdir):
         with modify_settings(STATICFILES_DIRS={
             'append': getattr(settings, 'STATICFILES_DIRS_DEV', []),
+            'remove': [
+                # Remove with and without trailing /
+                ROOT.joinpath(defaults.RJS_BUILD_DIR).normpath().parent,
+                ROOT.joinpath(defaults.RJS_BUILD_DIR).normpath().parent.joinpath(''),
+            ]
         }):
             call_task('django', args=args)
 
