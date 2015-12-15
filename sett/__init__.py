@@ -50,8 +50,8 @@ class SettTaskLoader(object):
         self._tasks = None
 
     def get_tasks(self):
-        debug('Loading tasks')
         if self._tasks is None:
+            debug('Loading tasks')
             self._tasks = list(self._load())
         return self._tasks
 
