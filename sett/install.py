@@ -3,7 +3,7 @@
 
 import optparse
 
-from paver.easy import task, consume_nargs, needs, sh, cmdopts, path, environment
+from paver.easy import task, consume_nargs, needs, sh, cmdopts, path
 from sett import which
 
 
@@ -21,13 +21,13 @@ from sett import which
                          help='Force the installation',
                          ),
 ])
-def remote_install(args, options):
+def remote_install(args, options, env):
     """Build, copy to a remote SSH and install in the given venv"""
 
     remote = args[0]
     venv = path(options.remote_install.venv)
 
-    target = environment.wheel_file.basename()
+    target = env.wheel_file.basename()
     ssh_command = [
         which.ssh,
         remote,
@@ -50,9 +50,9 @@ def remote_install(args, options):
                          ),
 ])
 @consume_nargs(1)
-def local_install(args, options):
+def local_install(args, options, env):
     """Install the package in a virtual env present on the local filesystem"""
-    target = environment.wheel_file
+    target = env.wheel_file
     venv = path(args[0])
 
     pip_install = [venv.joinpath('bin/pip'), 'install', target]

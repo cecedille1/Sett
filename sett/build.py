@@ -6,7 +6,7 @@ import sys
 import os
 
 
-from paver.easy import task, call_task, environment, path, no_help, needs, debug, info
+from paver.easy import task, call_task, path, no_help, needs, debug, info
 from paver.setuputils import setup, _get_distribution
 
 from sett import ROOT, optional_import
@@ -43,14 +43,14 @@ def make(options):
 
 @task
 @needs(['setup_options'])
-def wheel():
+def wheel(env):
     call_task('bdist_wheel')
 
     dist = _get_distribution()
     for cmd, x, file in dist.dist_files:
         if cmd == 'bdist_wheel':
-            environment.wheel_file = path(file).abspath()
-            debug('Invented the wheel in %s', environment.wheel_file)
+            env.wheel_file = path(file).abspath()
+            debug('Invented the wheel in %s', env.wheel_file)
             break
     else:
         info('Cannot invent the wheel')

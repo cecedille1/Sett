@@ -11,14 +11,13 @@ import subprocess
 import collections
 
 from paver.easy import (task, consume_nargs, consume_args, might_call,
-                        call_task, sh, no_help, info, needs, debug, path,
-                        environment)
+                        call_task, sh, no_help, info, needs, debug, path)
 
 from sett import which, DeployContext, defaults, task_alternative
 
 
 @task
-def clean_migrations():
+def clean_migrations(env):
     """
     Merge uncommitted migrations
     """
@@ -47,7 +46,7 @@ def clean_migrations():
         for script in scripts:
             script.remove()
 
-    if not environment.dry_run:
+    if not env.dry_run:
         args = ['makemigrations']
         args.extend(m for m in matches if matches[m])
         call_task('django', args=args)
@@ -117,9 +116,6 @@ def start_app(args):
 
 
 def _guess_settings():
-    if hasattr(environment, 'django_settings_file'):
-        return environment.django_settings_file
-
     if os.environ.get('DJANGO_SETTINGS_MODULE'):
         import importlib
         settings = importlib.import_module(os.environ['DJANGO_SETTINGS_MODULE'])

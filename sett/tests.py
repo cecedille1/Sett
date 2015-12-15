@@ -7,7 +7,7 @@ import os
 import optparse
 import importlib
 
-from paver.easy import task, needs, cmdopts, call_task, path, sh, debug, environment
+from paver.easy import task, needs, cmdopts, call_task, path, sh, debug
 from sett import which, defaults
 
 
@@ -148,7 +148,7 @@ def coverage(options):
                          default='test-venv',
                          help='Selects the name of the virtualenv'),
 ])
-def test_archive(options):
+def test_archive(options, env):
     if not options.name:
         raise RuntimeError()
 
@@ -159,7 +159,7 @@ def test_archive(options):
 
     sh([which.virtualenv, '--python', sys.executable, destdir])
 
-    command = [destdir.joinpath('bin/pip'), 'install', environment.wheel_file]
+    command = [destdir.joinpath('bin/pip'), 'install', env.wheel_file]
     if options.pypi:
         command.extend(['-i', options.pypi])
 
