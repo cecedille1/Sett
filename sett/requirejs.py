@@ -15,6 +15,18 @@ from sett.npm import NODE_MODULES
 
 
 class RJSBuild(object):
+    """
+    A wrapper arround a r.js command. It takes the requirejs *name* of the
+    module to build, the *source* directory, the *out* directory, and a dict of
+    *defaults* for the r.js command.
+
+    A list of the file used to build is written in a file name
+    ``.*name*.files`` next to the file generated in *out*. This list of files
+    is checked by ``should_build`` to avoid regenerating the build file if no
+    script have been touched since the last generation.
+
+    **Note**: The file loaded by the plugins are not checked.
+    """
     def __init__(self, name, source, out, defaults):
         self.name = name
         self.source = path(source)
@@ -23,19 +35,36 @@ class RJSBuild(object):
 
     @property
     def config_js(self):
+        """
+        The path to the config.js file.
+        """
         return self.source.joinpath(defaults.RJS_CONFIG)
 
+    @property
+    def cache_file(self):
+        """
+        The path of the cache file.
+        """
+        return self.out.dirname().joinpath('.{}.files'.format(self.out.basename()))
+
     def should_build(self):
-        ofc = self.out_file_cache()
-        debug('Read cache from %s', ofc)
+        """
+        Determines if the module should be built. It should be built if:
+
+        * There is no out file.
+        * There is no cache.
+        * There is a file in the cache that has been modified since the out
+        file have been built.
+        """
         try:
             out_build_time = self.out.stat().st_mtime
         except OSError:
             return True
 
+        debug('Read cache from %s', self.cache_file)
         try:
             dep_write_time = os.stat(self.config_js).st_mtime
-            with open(ofc, 'r') as file:
+            with open(self.cache_file, 'r') as file:
                 for line in file:
                     if '!' in line:
                         continue
@@ -48,10 +77,16 @@ class RJSBuild(object):
         # Return should_write = True when the last dependency was written after
         return dep_write_time > out_build_time
 
-    def out_file_cache(self):
-        return self.out.dirname().joinpath('.{}.files'.format(self.out.basename()))
-
     def get_command(self, **kw):
+        """
+        Return the r.js command to invoke. The kwargs is a list of option for
+        r.js. Options should be a map of string to strings. They are joined by
+        a ``=``.
+
+        >>> self.get_command(preserveLicenseComments='true', name=self.name)
+            ['/usr/bin/node.js', '/usr/lib/node_modules/.bin/r.js', '-o',
+             'preserveLicenseComments=true', 'name=app/app']
+        """
         c = [
             which.node,
             which.search('r.js'),
@@ -61,6 +96,14 @@ class RJSBuild(object):
         return c
 
     def build(self):
+        """
+        Invoke the r.js command. It checks the output of the r.js process to
+        write the list of files in ``cache_file``.
+
+        If the r.js process returns with anything else than 0, it raises a
+        ``RuntimeError``.
+        """
+
         info('Writing %s', self.out)
         command = self.get_command(
             baseUrl=self.source,
@@ -84,8 +127,12 @@ class RJSBuild(object):
         self.write_cache(files)
 
     def parse_output(self, stdout):
+        """
+        Parse the output of the r.js process. It expects a marker printed by
+        r.js before the list of files. It raises a ``RuntimeError`` if this
+        marker is not encountered else it returns the list of files.
+        """
         for line in stdout:
-            debug(line)
             if line.startswith(b'-------------'):
                 break
         else:
@@ -100,17 +147,24 @@ class RJSBuild(object):
         return files
 
     def write_cache(self, files):
-        out_path = self.out_file_cache()
-        debug('Writing cache in %s', out_path)
-        with open(out_path, 'w') as out_file:
+        """
+        Write the cache file
+        """
+        debug('Writing cache in %s', self.cache_file)
+        with open(self.cache_file, 'w') as out_file:
             for file in files:
                 out_file.write(str(file))
                 out_file.write('\n')
 
 
 class AppRJSBuild(RJSBuild):
+    """
+    An implementation for a scenario of r.js when a single app handle a page.
+    It uses almond.
+    """
     @property
     def almond(self):
+        """The path to almond"""
         return NODE_MODULES.joinpath('almond/almond')
 
     def get_command(self, **kw):
@@ -123,12 +177,17 @@ class AppRJSBuild(RJSBuild):
 
 
 class RJSBuilder(object):
-    defaults = {
-        'generateSourceMaps': 'true',
-        'preserveLicenseComments': 'false',
-        'skipDirOptimize': 'false',
-        'wrap': 'true',
-    }
+    """
+    A builder for a set of r.js modules.
+
+    It takes a the name *appdir* which contains the files to build from the
+    static env.
+
+    >>> rjsb = RJSBuilder('app', ROOT.joinpath('build/js'))
+
+    When called it will autodiscover apps or filter the one given in args and
+    build them each if necessary (``RJSBuild.should_build``).
+    """
 
     def __init__(self, appdir, outdir, force=False, build_class=AppRJSBuild, defaults=()):
         self.appdir = path(appdir)
@@ -140,13 +199,25 @@ class RJSBuilder(object):
         self.defaults.update(defaults)
 
     def get_defaults(self):
-        return dict(self.defaults)
+        """
+        Returns a list of default values.
+        """
+        return {
+            'generateSourceMaps': 'true',
+            'preserveLicenseComments': 'false',
+            'skipDirOptimize': 'false',
+            'wrap': 'true',
+        }
 
     def _build(self, rjs_build):
         if self.force or rjs_build.should_build():
             rjs_build.build()
 
     def autodiscover(self, tempdir):
+        """
+        Tries to find under *appdir* in the *tempdir* all the ``js`` files and
+        returns the matching requirejs module names.
+        """
         args = []
         info('Auto discovering JS %s', self.appdir)
         for dir in path(tempdir).walkdirs(self.appdir):
@@ -155,11 +226,17 @@ class RJSBuilder(object):
         return args
 
     def get_builds(self, source, args):
+        """
+        Returns a list of  ``RJSBuild`` instances for the given modules.
+        """
         for name in args:
             out = ROOT.joinpath(self.outdir, name + '.js')
             yield self.build_class(name, source, out, self.defaults)
 
     def filter(self, args):
+        """
+        Filters the args to match only those under the *appdir*.
+        """
         return [arg for arg in args if arg.startswith(self.appdir)]
 
     def __call__(self, tempdir, args):
