@@ -205,7 +205,7 @@ def _runserver(args):
     execute_from_command_line(command)
 
 
-@task
+@task_alternative(10)
 def statics():
     """
     Collect the static files
