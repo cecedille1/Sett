@@ -23,7 +23,7 @@ def run_compass(*commands, **kw):
 
 @task
 @consume_args
-def compass(args, options):
+def compass(args):
     """Run a compass command. The root of the compass environment is the value
     of paver.environment.compass_root and defaults to ROOT/compass"""
     run_compass(*args)
