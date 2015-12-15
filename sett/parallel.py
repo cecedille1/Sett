@@ -12,6 +12,7 @@ from paver.easy import debug
 
 
 def parallel(fn):
+    debug('Running %s %s ', 'parallel' if defaults.USE_THREADING else 'linear', fn)
     if defaults.USE_THREADING:
         return Threaded(fn)
     return Linear(fn)
