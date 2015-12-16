@@ -8,6 +8,7 @@ import subprocess
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
                         info, needs, path, debug, sh)
+from paver.deps.six import text_type
 
 from sett import ROOT, which, defaults, parallel
 from sett.utils import Tempdir
@@ -27,11 +28,12 @@ class RJSBuild(object):
 
     **Note**: The file loaded by the plugins are not checked.
     """
-    def __init__(self, name, source, out, defaults):
+    def __init__(self, name, source, out, defaults, cache):
         self.name = name
         self.source = path(source)
         self.out = path(out)
         self.defaults = defaults
+        self.cache = cache
 
     @property
     def config_js(self):
@@ -39,43 +41,6 @@ class RJSBuild(object):
         The path to the config.js file.
         """
         return self.source.joinpath(defaults.RJS_CONFIG)
-
-    @property
-    def cache_file(self):
-        """
-        The path of the cache file.
-        """
-        return self.out.dirname().joinpath('.{}.files'.format(self.out.basename()))
-
-    def should_build(self):
-        """
-        Determines if the module should be built. It should be built if:
-
-        * There is no out file.
-        * There is no cache.
-        * There is a file in the cache that has been modified since the out
-        file have been built.
-        """
-        try:
-            out_build_time = self.out.stat().st_mtime
-        except OSError:
-            return True
-
-        debug('Read cache from %s', self.cache_file)
-        try:
-            dep_write_time = os.stat(self.config_js).st_mtime
-            with open(self.cache_file, 'r') as file:
-                for line in file:
-                    if '!' in line:
-                        continue
-                    dep_write_time = max(dep_write_time, os.stat(line.strip()).st_mtime)
-        except OSError as e:
-            debug('Choked on %s: %s', line, e)
-            return True
-
-        debug('out written at %s, max(deps) at %s', out_build_time, dep_write_time)
-        # Return should_write = True when the last dependency was written after
-        return dep_write_time > out_build_time
 
     def get_command(self, **kw):
         """
@@ -94,6 +59,9 @@ class RJSBuild(object):
         ]
         c.extend(map('='.join, kw.items()))
         return c
+
+    def should_build(self):
+        return self.cache.is_up_to_date()
 
     def build(self):
         """
@@ -124,7 +92,10 @@ class RJSBuild(object):
 
         if rc != 0:
             raise RuntimeError('r.js returned with {}'.format(rc))
-        self.write_cache(files)
+
+        # The config file is not added by requirejs as the list of files
+        files.append(self.config_js)
+        self.cache.write(files)
 
     def parse_output(self, stdout):
         """
@@ -146,16 +117,6 @@ class RJSBuild(object):
                 files.append(path(line).realpath())
         return files
 
-    def write_cache(self, files):
-        """
-        Write the cache file
-        """
-        debug('Writing cache in %s', self.cache_file)
-        with open(self.cache_file, 'w') as out_file:
-            for file in files:
-                out_file.write(str(file))
-                out_file.write('\n')
-
 
 class AppRJSBuild(RJSBuild):
     """
@@ -174,6 +135,57 @@ class AppRJSBuild(RJSBuild):
             insertRequire=self.name,
         )
         return super(AppRJSBuild, self).get_command(**kw)
+
+
+class FilesListComparator(object):
+    """
+    Keeps a file containing a list of path to files.
+    """
+
+    def __init__(self, out):
+        self.out = out
+        self.cache_file = self.out.dirname().joinpath('.{}.files'.format(self.out.basename()))
+
+    def is_up_to_date(self):
+        """
+        Determines if the module should be built. It should be built if:
+
+        * There is no out file.
+        * There is no cache.
+        * There is a file in the cache that has been modified since the out
+        file have been built.
+        """
+        try:
+            out_build_time = self.out.stat().st_mtime
+        except OSError:
+            return True
+
+        debug('Read cache from %s', self.cache_file)
+        try:
+            line = self.cache_file
+            dep_write_time = 0
+            with open(self.cache_file, 'r') as file:
+                for line in file:
+                    if '!' in line:
+                        continue
+                    dep_write_time = max(dep_write_time, os.stat(line.strip()).st_mtime)
+        except OSError as e:
+            debug('Choked on %s: %s', line, e)
+            return True
+
+        debug('out written at %s, max(deps) at %s', out_build_time, dep_write_time)
+        # Return should_write = True when the last dependency was written after
+        return dep_write_time > out_build_time
+
+    def write(self, files_list):
+        """
+        Write the cache file
+        """
+        debug('Writing cache in %s', self.cache_file)
+        with open(self.cache_file, 'w') as out_file:
+            for file in files_list:
+                out_file.write(text_type(file))
+                out_file.write(u'\n')
 
 
 class RJSBuilder(object):
@@ -231,7 +243,8 @@ class RJSBuilder(object):
         """
         for name in args:
             out = ROOT.joinpath(self.outdir, name + '.js')
-            yield self.build_class(name, source, out, self.defaults)
+            cache = FilesListComparator(out)
+            yield self.build_class(name, source, out, self.defaults, cache)
 
     def filter(self, args):
         """
@@ -240,7 +253,6 @@ class RJSBuilder(object):
         return [arg for arg in args if arg.startswith(self.appdir)]
 
     def __call__(self, tempdir, args):
-        source = tempdir.joinpath('js')
         if not args:
             # Auto discover
             args = self.autodiscover(tempdir)
@@ -253,7 +265,7 @@ class RJSBuilder(object):
             return
 
         try:
-            for build in self.get_builds(source, args):
+            for build in self.get_builds(tempdir, args):
                 self.build(build)
         finally:
             self.build.wait()
@@ -293,7 +305,7 @@ to the STATICFILES_DIRS setting before loading files.
     )
 
     with Tempdir() as tempdir:
-        call_task('virtual_static', args=[tempdir])
+        call_task('virtual_static', args=[tempdir.joinpath('js')])
         buidler(tempdir, args)
 
 
