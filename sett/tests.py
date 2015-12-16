@@ -25,7 +25,10 @@ class TestsNameGenerator(object):
             self.start = 0
 
     def __call__(self, package_name):
-        return '.'.join(self.root + [self.prefix + test for test in package_name.split('.')[self.start:]])
+        return '.'.join(self.root + [
+            self.prefix.format(test)
+            for test in package_name.split('.')[self.start:]
+        ])
 
 
 def _nosetests(options):
