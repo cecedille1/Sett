@@ -166,9 +166,10 @@ class FilesListComparator(object):
             dep_write_time = 0
             with open(self.cache_file, 'r') as file:
                 for line in file:
+                    line = line.strip()
                     if '!' in line:
                         continue
-                    dep_write_time = max(dep_write_time, os.stat(line.strip()).st_mtime)
+                    dep_write_time = max(dep_write_time, os.stat(line).st_mtime)
         except OSError as e:
             debug('Choked on %s: %s', line, e)
             return True
