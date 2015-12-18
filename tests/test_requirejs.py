@@ -105,7 +105,7 @@ class TestRJSBuild(unittest.TestCase):
 
         with mock.patch('sett.requirejs.subprocess') as subproc:
             subproc.Popen.return_value = process
-            with mock.patch.object(self.rjsb, 'get_command') as get_command:
+            with mock.patch.object(self.rjsb, 'get_command'):
                 with self.assertRaises(RuntimeError):
                     self.rjsb.build()
 

@@ -7,7 +7,7 @@ import os
 import subprocess
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
-                        info, needs, path, debug, sh)
+                        info, needs, path, debug, error, sh)
 from paver.deps.six import text_type
 
 from sett import ROOT, which, defaults, parallel
@@ -103,10 +103,13 @@ class RJSBuild(object):
         r.js before the list of files. It raises a ``RuntimeError`` if this
         marker is not encountered else it returns the list of files.
         """
+        output = []
         for line in stdout:
+            output.append(line.decode('utf-8'))
             if line.startswith(b'-------------'):
                 break
         else:
+            error('rjs said: %s', '\n'.join(output))
             raise RuntimeError('r.js did not write the expected marker')
 
         files = []
@@ -114,7 +117,7 @@ class RJSBuild(object):
             # resolve path
             line = line.decode('utf-8').strip()
             if line:
-                files.append(path(line).realpath())
+                files.append(line)
         return files
 
 
@@ -185,7 +188,7 @@ class FilesListComparator(object):
         debug('Writing cache in %s', self.cache_file)
         with open(self.cache_file, 'w') as out_file:
             for file in files_list:
-                out_file.write(text_type(file))
+                out_file.write(text_type(path(file).realpath()))
                 out_file.write(u'\n')
 
 
@@ -299,10 +302,13 @@ to the STATICFILES_DIRS setting before loading files.
     else:
         cls = RJSBuilder
 
+    outdir = ROOT.joinpath(defaults.RJS_BUILD_DIR)
+    outdir.makedirs()
+
     buidler = cls(
         defaults.RJS_APP_DIR,
         force=force,
-        outdir=ROOT.joinpath(defaults.RJS_BUILD_DIR)
+        outdir=outdir,
     )
 
     with Tempdir() as tempdir:
