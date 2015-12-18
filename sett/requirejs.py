@@ -306,8 +306,8 @@ to the STATICFILES_DIRS setting before loading files.
     )
 
     with Tempdir() as tempdir:
-        call_task('virtual_static', args=[tempdir.joinpath('js')])
-        buidler(tempdir, args)
+        call_task('virtual_static', args=[tempdir])
+        buidler(tempdir.joinpath('js'), args)
 
 
 @task
