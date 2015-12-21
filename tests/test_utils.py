@@ -64,6 +64,8 @@ def test_optional_import():
 
 def test_optional_import_fail():
     foo_bar = optional_import('foo.bar')
+    assert not foo_bar, 'FakeModule should be falsy'
+
     try:
         foo_bar.baz
     except AttributeError:

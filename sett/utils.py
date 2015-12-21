@@ -107,6 +107,12 @@ class FakeModule(object):
         self._name = name
         self._module = module_name
 
+    def __bool__(self):
+        return False
+
+    def __nonzero__(self):
+        return False
+
     def __getattr__(self, attr):
         if self._module:
             raise RuntimeError('Module {} provided by {} is not installed'.format(
