@@ -13,7 +13,9 @@ import collections
 from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path)
 
-from sett import which, DeployContext, defaults, task_alternative
+from sett import which, DeployContext, defaults, task_alternative, optional_import
+
+django_module = optional_import('django')
 
 
 @task
@@ -55,15 +57,12 @@ def clean_migrations(env):
 @task
 @no_help
 def django_settings():
-    import django
-    django.setup()
+    django_module.setup()
 
 
 @DeployContext.register
 def load_django():
-    try:
-        import django  # noqa
-    except ImportError:
+    if not django_module:
         return {}
 
     from django.conf import settings
@@ -230,8 +229,8 @@ def messages():
     call_task('django_cmd', args=['compilemessages'])
 
 
-@task
-@task_alternative(10, 'shell')
-def django_shell():
-    """alias for `django shell`"""
-    call_task('django_cmd', args=['shell'])
+if django_module:
+    @task_alternative(10, 'shell')
+    def django_shell():
+        """alias for `django shell`"""
+        call_task('django_cmd', args=['shell'])
