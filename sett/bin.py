@@ -37,23 +37,6 @@ class DirectoriesSearcher(object):
         return '<DS {}>'.format(', '.join(d.directory for d in self.directories))
 
 
-class NodeModulesSearcher(object):
-    def __init__(self, directory):
-        self.directory = directory
-
-    def search(self, program):
-        for bin_path in self._candidates(program):
-            if bin_path.access(os.X_OK):
-                return bin_path
-
-    def _candidates(self, program):
-        return (directory.joinpath('bin', program)
-                for directory in self.directory.listdir())
-
-    def __repr__(self):
-        return '<NMS {}>'.format(self.directory)
-
-
 class Which(object):
     NotInstalled = NotInstalled
 
@@ -91,7 +74,7 @@ def default_searchers():
 
     from sett.npm import NODE_MODULES
     if NODE_MODULES.exists():
-        searchers.append(NodeModulesSearcher(NODE_MODULES))
+        searchers.append(DirectorySearcher(NODE_MODULES.joinpath('.bin')))
 
     from sett.gem import GEM_HOME
     if GEM_HOME.exists():
