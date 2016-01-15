@@ -29,6 +29,7 @@ class Container(object):
 
     def start(self):
         self.client.start(self.name)
+        del self._properties
 
     @property
     def properties(self):
