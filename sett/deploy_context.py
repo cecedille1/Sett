@@ -6,6 +6,7 @@ import getpass
 import os
 import grp
 import collections
+import itertools
 
 from sett import ROOT, defaults
 from paver.easy import environment
@@ -43,17 +44,29 @@ def set_{name_fn}():
 
 class DeployContextFactory(object):
     def __init__(self, **kw):
-        self._providers = [
-            kw
-        ]
+        self._providers = []
+        self._defaults = [kw]
+
+    def __iter__(self):
+        return itertools.chain(self._defaults, self._providers)
+
+    def register_default(self, provider_fn=None, **kw):
+        provider = self._parse(provider_fn, kw)
+        self._defaults.insert(0, provider)
+        return provider
 
     def register(self, provider_fn=None, **kw):
+        provider = self._parse(provider_fn, kw)
+        self._providers.append(provider)
+        return provider
+
+    def _parse(sekf, provider_fn, kwargs):
         if provider_fn is None:
-            self._providers.append(kw)
-        else:
-            assert callable(provider_fn)
-            assert not kw
-            self._providers.append(provider_fn)
+            assert kwargs
+            return kwargs
+
+        assert callable(provider_fn)
+        assert not kwargs
         return provider_fn
 
     def __call__(self, values=None):
@@ -80,7 +93,7 @@ class DeployContextFactory(object):
 DeployContext = DeployContextFactory()
 
 
-@DeployContext.register
+@DeployContext.register_default
 def default_context():
     setup_options = environment.get_task('setup_options')
     if not setup_options.called:

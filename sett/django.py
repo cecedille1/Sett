@@ -60,7 +60,7 @@ def django_settings():
     django_module.setup()
 
 
-@DeployContext.register
+@DeployContext.register_default
 def load_django():
     if not django_module:
         return {}

@@ -15,7 +15,7 @@ from sett.deploy_context import DeployContext
 UWSGI_PATH = ROOT.joinpath('var')
 CONFIG = ROOT.joinpath('parts/uwsgi/uwsgi.xml')
 
-DeployContext.register(
+DeployContext.register_default(
     uwsgi={
         'config': CONFIG,
     },
@@ -23,7 +23,7 @@ DeployContext.register(
 )
 
 
-@DeployContext.register
+@DeployContext.register_default
 def uwsgi_context():
     if defaults.UWSGI_SOCKET_TYPE == 'unix':
         return {
