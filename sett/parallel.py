@@ -67,8 +67,8 @@ class Threaded(object):
                     debug('%s: Got a task', n)
                     self._fn(*args, **kw)
                     debug('%s: Finishing a task', n)
-                except Exception:
-                    self.failed_tasks.append((args, kw))
+                except Exception as e:
+                    self.failed_tasks.append((args, kw, e))
                 finally:
                     debug('%s: I see the light at the end of the tunnel', n)
                     self._queue.task_done()
