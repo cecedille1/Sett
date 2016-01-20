@@ -16,6 +16,9 @@ class DeployContextInstance(collections.Mapping):
     def __init__(self, values):
         self.values = values
 
+    def __repr__(self):
+        return repr(self.values)
+
     def __getitem__(self, item):
         try:
             return self._get(item)
@@ -74,7 +77,7 @@ class DeployContextFactory(object):
         if values:
             context.update(values)
 
-        for provider in self._providers:
+        for provider in self:
             if callable(provider):
                 provider = provider()
 
