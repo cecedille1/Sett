@@ -11,15 +11,20 @@ from sett import defaults
 from paver.easy import debug
 
 
-def parallel(fn):
-    debug('Running %s %s ', 'parallel' if defaults.USE_THREADING else 'linear', fn)
-    if defaults.USE_THREADING:
-        return Threaded(fn)
-    return Linear(fn)
+def parallel(fn=None, **kw):
+    def inner_parallel(fn):
+        debug('Running %s %s ', 'parallel' if defaults.USE_THREADING else 'linear', fn)
+        if defaults.USE_THREADING:
+            return Threaded(fn, **kw)
+        return Linear(fn, **kw)
+
+    if fn is None:
+        return inner_parallel
+    return inner_parallel(fn)
 
 
 class Linear(object):
-    def __init__(self, fn):
+    def __init__(self, fn, n=1):
         self._fn = fn
 
     def __call__(self, *args, **kw):
