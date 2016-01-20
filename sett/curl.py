@@ -81,7 +81,8 @@ def curl(args, options):
     )
     end = time.time()
 
-    sys.stdout.write('Completion in {}\n'.format(end - start))
+    if not options.stream:
+        sys.stdout.write('Completion in {}\n'.format(end - start))
 
     sys.stdout.write('{} {}\n'.format(req.status_code, req.reason))
     for h, v in req.headers.items():
@@ -91,8 +92,9 @@ def curl(args, options):
         return
 
     if options.stream:
-        for line in req.iter_lines():
-            sys.stdout.write(line.decode('utf-8'))
+        req.encoding = req.encoding or 'utf-8'
+        for line in req.iter_content(decode_unicode=True):
+            sys.stdout.write(line)
     elif req.headers.get('content-type', '').startswith('application/json'):
         req.encoding = 'utf-8'
         json.dump(req.json(), sys.stdout, indent=4)
