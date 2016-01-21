@@ -15,6 +15,7 @@ import os
 import sys
 import importlib
 
+from sett import defaults
 from sett.bin import which
 from sett.utils import optional_import
 from sett.paths import ROOT
@@ -26,21 +27,19 @@ from paver.path import path
 from paver.easy import debug
 from paver.tasks import environment, Task
 
-ALL_LIBS = frozenset(p.namebase
-                     for p in path(__file__).dirname().files('*.py')
-                     if p.basename() != '__init__.py')
-DISABLED_LIBS = set(os.environ.get('SETT_DISABLED_LIBS', '').split())
-ENABLED_LIBS = set(os.environ.get('SETT_ENABLED_LIBS', '').split())
 
+def get_libs(environ=os.environ, pavement=environment.pavement):
+    all_libs = frozenset(p.namebase
+                         for p in path(__file__).dirname().files('*.py')
+                         if p.basename() != '__init__.py')
+    disabled_libs = set(environ.get('SETT_DISABLED_LIBS', '').split())
+    enabled_libs = set(environ.get('SETT_ENABLED_LIBS', '').split())
 
-if environment.pavement:
-    DISABLED_LIBS.update(getattr(environment.pavement, 'DISABLED_LIBS', []))
-    ENABLED_LIBS.update(getattr(environment.pavement, 'ENABLED_LIBS', []))
+    if pavement:
+        disabled_libs.update(getattr(environment.pavement, 'DISABLED_LIBS', []))
+        enabled_libs.update(getattr(environment.pavement, 'ENABLED_LIBS', []))
 
-sys.path.append(ROOT)
-
-
-task_alternative = TaskAlternative(environment)
+    return enabled_libs or all_libs, disabled_libs
 
 
 class SettTaskLoader(object):
@@ -80,13 +79,6 @@ class SettTaskFinder(object):
         return
 
 
-loader = SettTaskLoader(ENABLED_LIBS or ALL_LIBS, DISABLED_LIBS)
-environment.task_finders.extend([
-    TaskAlternativeTaskFinder(loader, task_alternative),
-    SettTaskFinder(loader),
-])
-
-
 class SettModule(object):
     """Proxy the sett module so that from sett import xyz succeeds, but
     dir(sett) when done by paver in environment.get_tasks fails"""
@@ -100,4 +92,29 @@ class SettModule(object):
     def __setattr__(self, attr, value):
         self.__dict__[attr] = value
 
+
+def init():
+    """
+    Initialize the paver
+    """
+    environment.sett = sys.modules['sett']
+    environment.ROOT = ROOT
+    environment.defaults = defaults
+    environment.deployment = DeployContext
+    environment.task_finders.extend([
+        TaskAlternativeTaskFinder(loader, task_alternative),
+        SettTaskFinder(loader),
+    ])
+
+    init = getattr(environment.pavement, 'init', None)
+    if init and callable(init):
+        init(environment)
+
+
 sys.modules['sett'] = SettModule(sys.modules['sett'])
+sys.path.append(ROOT)
+task_alternative = TaskAlternative(environment)
+loader = SettTaskLoader(*get_libs())
+
+
+init()
