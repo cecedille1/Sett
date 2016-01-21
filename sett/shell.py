@@ -12,17 +12,14 @@ from sett import task_alternative
 from sett.utils import task_name
 
 from paver.easy import task, consume_nargs, cmdopts
+from paver.deps.six import text_type, exec_, PY2
 
-if sys.version_info > (3, ):
-    text_type = str
-
-    def text_repr(fn):
-        return fn
-else:
-    text_type = unicode
-
+if PY2:
     def text_repr(fn):
         fn.__name__ = '__unicode__'
+        return fn
+else:
+    def text_repr(fn):
         return fn
 
 try:
@@ -41,14 +38,6 @@ def shell():
     import code
     shell = code.InteractiveConsole()
     shell.interact()
-
-
-try:
-    import builtins
-    _exec = getattr(builtins, 'exec')
-except (ImportError, AttributeError):
-    def _exec(code, globals, locals):
-        exec('exec code in globals, locals')
 
 
 class Line(collections.namedtuple('Line', ['ast', 'original'])):
@@ -70,7 +59,7 @@ class Line(collections.namedtuple('Line', ['ast', 'original'])):
 class Statement(Line):
     def __call__(self, globals, locals):
         previous = locals.copy()
-        _exec(self.code, globals, locals)
+        exec_(self.code, globals, locals)
         return self._find_changes(previous, locals)
 
     def _find_changes(self, previous, current):
@@ -159,7 +148,7 @@ class Executor(object):
     )
 ])
 @task_name('exec')
-def exec_(args, options):
+def exec_task(args, options):
     """
     Execute a snippet.
 
