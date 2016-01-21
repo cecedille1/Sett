@@ -17,9 +17,111 @@ sett are loaded.
     import sett  # noqa
 ```
 
+This way sett is required for the setup to be run. Sett provides a way to write
+a pavement file that works even if sett is not installed. The import is wrapped
+in a try that silences ImportError. Sett will load its tasks if it is present.
+
+```
+    try:
+        import sett  # noqa
+    except ImportError:
+        pass
+```
+
+
+### Initialisation
+
+If the pavement file contains a function named init, it will run it with the
+paver environment.
+
+```
+    def init(env):
+        env.deployment.register(wsgi_module='my_app.wsgi.application')
+```
+
+### Context injection
+
+In order to pass args, sett takes advantage of the context injection feature of
+paver and any tasks that has a `defaults`, `ROOT`, `sett` or `deployment` will
+respectively get the sett.defaults module, the path of the root of the project,
+the sett module or the current DeployContext. It's also possible to import
+values directly.
+
+```
+    @task
+    def reset_logs(ROOT):
+        ROOT.joinpath('var', 'log', 'app.log').truncate()
+```
+
 
 Features
 --------
+
+### Deploy context
+
+In order to share context to deploy, pavement and registered tasks can register
+callbacks and values to generate a global dict of values. A global instance is
+generated and is available by the argument ``deployment`` of a task, or by
+importing DeployContext from the sett module. Values can be added by calling
+``register`` on it. Two kind of values can be register: either a dict of static
+values or a callback providing it at runtime. Those two ways are cannot be used
+together in the same invocation.
+
+Callbacks invocations must return a mapping of values. They don't take arguments.
+DeployContext.register works nicely as a decorator.
+
+DeployContext.register can be called at any moment, after or before loading, in
+a separate tasks, etc.
+
+```
+    from sett import DeployContext
+    DeployContext.register(name='my_app')
+
+    @DeployContext.register
+    def provider():
+        from my_app import __version__
+        return {
+            'version': __version__,
+        }
+
+    @task
+    def load_prod():
+        DeployContext.register(mode='prod')
+```
+
+The precendence goes to the last registered provider. ``list``s and ``dict``s
+are merged and not replaced. The content of the lower precendence list appears
+first and values of lower precendence dict are overwritten. Dicts and lists
+must be updated with the same type of values or it will raise a TypeError.
+
+```
+    from sett import DeployContext
+    DeployContext.register(name='my_app', version='1.23')
+    DeployContext.register(name='my_best_app', extra=['best_module'])
+    DeployContext.register(extra=['other_module'])
+    assert DeployContext() == {'name': 'my_best_app', 'version': '1.23',
+                                'extra': ['best_module', 'other_module']})
+```
+
+When DeployContext is called a Mapping is returned that has all the key from
+the various providers merged. A DeployContext can be called with a mapping of
+default values. Thoses keys have the lower precendence, but the can enforce
+a type of value, as lists, dicts, and other types of values do not merge.
+If a key does not exists, a KeyError is raised with an explication and a code
+snippet that describe how to provide the missing value.
+
+```
+    from sett import DeployContext
+    DeployContext.register(name='my_app', version='1.23', extra=['abc'])
+
+    @task
+    def foobarize(deployment):
+        context = deployment({'extra': []})
+        print('FOO: {name}-{version}\nBAR: {}'.format(
+            ', '.join(context['extra']),
+            **context,
+        )
+```
 
 ### Disabling and enabling libs
 
