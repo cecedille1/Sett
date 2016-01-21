@@ -84,9 +84,22 @@ class DeployContextFactory(object):
             assert isinstance(provider, collections.Mapping)
 
             for key, value in provider.items():
-                if isinstance(value, dict) and key in context:
+                if key not in context:
+                    if type(value) in (list, dict):
+                        # copy the content of list and dict in order to not erase the original
+                        value = type(value)(value)
+                    context[key] = value
+                    continue
+
+                current = context[key]
+                if ((isinstance(value, (dict, list)) or isinstance(current, (dict, list)))
+                        and type(current) != type(value)):
+                    raise TypeError('Type mismatch: Expected a %r for %s but got a %r' %
+                                    (type(current), key, type(value)))
+
+                if isinstance(value, dict):
                     context[key].update(value)
-                elif isinstance(value, list) and key in context:
+                elif isinstance(value, list):
                     context[key].extend(value)
                 else:
                     context[key] = value
