@@ -21,11 +21,11 @@ TAR_ROOT_FILE_MARKER = 'index.html'
 
 # The URL used to push the packages (pip upload)
 PYPI_REPOSITORY = 'http://enixpi.enix.org/'
-PYPI_REPOSITORY_IGNORE_SSL = True
+PYPI_REPOSITORY_IGNORE_SSL = False
 
 # The URL used to fetch the packages (pip install -i)
 PYPI_PACKAGE_INDEX = 'https://enixpi.enix.org/simple/'
-PYPI_PACKAGE_INDEX_IGNORE_SSL = True
+PYPI_PACKAGE_INDEX_IGNORE_SSL = False
 
 
 # The name of the directory containing compass sass sources
