@@ -4,7 +4,7 @@
 import sys
 
 from paver.easy import task, needs, cmdopts, sh
-from sett import which, defaults
+from sett import which
 
 
 @task
@@ -16,7 +16,6 @@ def quality(options):
     """Enforces PEP8"""
     out = getattr(options.quality, 'output', '-')
     flake8_command = [which.flake8]
-    flake8_command.extend(defaults.FLAKE8_EXTRA_ARGS)
     flake8_command.extend(package for package in options.setup['packages'] if '.' not in package)
     flake8_report = sh(flake8_command, capture=True)
 

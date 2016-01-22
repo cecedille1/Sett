@@ -32,8 +32,6 @@ PYPI_PACKAGE_INDEX_IGNORE_SSL = False
 COMPASS_DIR = 'compass'
 SCSS_LINT_CONFIG = 'compass/.scss-lint.yml'
 
-FLAKE8_EXTRA_ARGS = ['--max-line-length=120']
-
 
 DJANGO_SETTINGS_FILE = ['settings.py']
 
