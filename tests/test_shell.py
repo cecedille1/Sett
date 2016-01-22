@@ -21,6 +21,19 @@ class TestLine(unittest.TestCase):
         line = Line.build('a = 1')
         self.assertEqual(str(line), '>>> a = 1')
 
+    def test_instruction_dict(self):
+        class A(object):
+            pass
+        a = A()
+        a.value = 1
+        a._value = 2
+
+        line = Line.build('_ a')
+        l = {'a': a}
+
+        r = line({}, l)
+        self.assertEqual(r, Evaluation(line, {'value': 1, '_value': 2}))
+
     def test_instruction_for(self):
         line = Line.build('for x in range(3): a += x')
         l = {'a': 1}

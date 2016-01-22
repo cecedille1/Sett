@@ -44,6 +44,14 @@ class Line(collections.namedtuple('Line', ['ast', 'original'])):
     @classmethod
     def build(cls, original):
         stripped = original.strip()
+
+        if stripped.startswith('_ '):
+            _, stripped = stripped.split(' ', 1)
+            stripped = '{{x: y for x, y in ({}).__dict__.items() if not x.startswith("__")}}'.format(stripped)
+        elif stripped.startswith('__'):
+            _, stripped = stripped.split(' ', 1)
+            stripped = '({}).__dict__'.format(stripped)
+
         try:
             parsed = ast.parse(stripped, mode='eval')
             return Expression(parsed, original)
