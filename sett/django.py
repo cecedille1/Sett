@@ -66,8 +66,7 @@ def load_django():
         return {}
 
     from django.conf import settings
-    return {
-        'env': ['DJANGO_SETTINGS_MODULE={}'.format(os.environ['DJANGO_SETTINGS_MODULE'])],
+    env = {
         'wsgi_application': settings.WSGI_APPLICATION,
         'locations': {
             'static': settings.STATIC_URL,
@@ -78,6 +77,9 @@ def load_django():
             'media': settings.MEDIA_ROOT,
         }
     }
+    if 'DJANGO_SETTINGS_MODULE' in os.environ:
+        env['env'] = ['DJANGO_SETTINGS_MODULE={}'.format(os.environ['DJANGO_SETTINGS_MODULE'])]
+    return env
 
 
 @task
