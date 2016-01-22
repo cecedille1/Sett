@@ -6,32 +6,26 @@ from paver.easy import task, needs, debug, info, consume_nargs
 from sett import optional_import
 
 
-serializers = optional_import('django.core.serializers')
-transaction = optional_import('django.db.transaction')
-models = optional_import('django.db.models')
-utils = optional_import('django.db.utils')
-
-
 @task
 @needs('django_settings')
 @consume_nargs(1)
 def loaddata(args):
     filepath, = args
-    try:
-        handle = open(filepath, 'r')
+
+    deserialize = optional_import('django.core.serializers').deserialize
+    with open(filepath, 'r') as handle:
         models_by_class = collections.defaultdict(list)
         related_models = list()
 
-        for model in serializers.deserialize('json', handle):
+        for model in deserialize('json', handle):
             model_class = model.object.__class__
             models_by_class[model_class].append(model.object)
 
             for field, values in model.m2m_data.items():
                 if values:
                     related_models.append((model.object, field, values))
-    finally:
-        handle.close()
 
+    from django.db import transaction, models
     waiting_room = WaitingRoom()
 
     with transaction.atomic():
@@ -94,6 +88,8 @@ class Proceed(object):
         return '{} models for {}'.format(len(self.models), self.model_class.__name__)
 
     def __call__(self):
+        from django.db import utils, transaction
+
         try:
             with transaction.atomic():
                 self.model_class.objects.bulk_create(self.models)
