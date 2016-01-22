@@ -113,7 +113,7 @@ DeployContext = DeployContextFactory()
 def default_context():
     setup_options = environment.get_task('setup_options')
     if not setup_options.called:
-        setup_options()
+        return {}
 
     name = environment.options.setup.name.lower()
     return {
