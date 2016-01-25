@@ -49,6 +49,7 @@ installed_packages = InstalledPackages()
 
 @task
 @consume_args
+@which.update
 def npm(args):
     sh([which.npm] + args)
 
