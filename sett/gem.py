@@ -60,7 +60,7 @@ def run_ruby(command, *args, **kw):
     env = dict(os.environ)
     env['GEM_HOME'] = GEM_HOME
 
-    info('Running: ruby %s %s', command, ' '.join(args))
+    info('Running: GEM_HOME=%s ruby %s %s', GEM_HOME, command, ' '.join(args))
 
     expected_returns = kw.get('expect', {0})
     ruby = subprocess.Popen([which.ruby, command] + list(args), env=env)
