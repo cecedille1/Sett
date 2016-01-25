@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '0.9.11'
+__version__ = '0.9.12'
 
 __all__ = [
     'which',
