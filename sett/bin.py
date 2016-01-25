@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import functools
 from paver.easy import path
 
 
@@ -92,13 +93,28 @@ class LazyWhich(object):
     def __init__(self, searchers_provider):
         self.sp = searchers_provider
 
+    def is_evaluated(self):
+        return '_which' in self.__dict__
+
     def __getattr__(self, attr):
-        if '_which' not in self.__dict__:
+        if not self.is_evaluated():
             self._which = Which(self.sp())
         return getattr(self._which, attr)
 
     def __repr__(self):
         return self.__getattr__('__repr__')()
+
+    def update(self, fn=None):
+        if fn:
+            @functools.wraps(fn)
+            def inner_update(*args, **kw):
+                r = fn(*args, **kw)
+                self.update()
+                return r
+
+            return inner_update
+        elif self.is_evaluated():
+            del self._which
 
 
 which = LazyWhich(default_searchers)
