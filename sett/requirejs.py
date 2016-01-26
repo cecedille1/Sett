@@ -121,23 +121,26 @@ class RJSBuild(object):
         return files
 
 
-class AppRJSBuild(RJSBuild):
+class AlmondRJSBuild(RJSBuild):
     """
     An implementation for a scenario of r.js when a single app handle a page.
     It uses almond.
     """
-    @property
-    def almond(self):
+    def get_almond_path(self):
         """The path to almond"""
-        return NODE_MODULES.joinpath('almond/almond')
+        almond = NODE_MODULES.joinpath('almond/almond')
+        return self.source.relpathto(almond)
 
     def get_command(self, **kw):
         kw.update(
-            name=self.source.relpathto(self.almond),
+            name=self.defaults.get('almond') or self.get_almond_path(),
             include=self.name,
             insertRequire=self.name,
         )
         return super(AppRJSBuild, self).get_command(**kw)
+
+
+AppRJSBuild = AlmondRJSBuild
 
 
 class FilesListComparator(object):
