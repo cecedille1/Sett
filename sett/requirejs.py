@@ -212,7 +212,6 @@ class RJSBuilder(object):
         self.appdir = path(appdir)
         self.outdir = outdir
         self.force = force
-        self.build = parallel(self._build)
         self.build_class = build_class
         self.defaults = self.get_defaults()
         self.defaults.update(defaults)
@@ -271,11 +270,9 @@ class RJSBuilder(object):
             info('No file to optimize')
             return
 
-        try:
-            for build in self.get_builds(tempdir, args):
-                self.build(build)
-        finally:
-            self.build.wait()
+        build_list = list(self.get_builds(tempdir, args))
+        builder = parallel(self._build, n=min(4, len(build_list)))
+        builder.for_each(build_list)
 
 
 @task
