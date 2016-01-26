@@ -30,13 +30,22 @@ NODE_MODULES = get_root()
 
 
 class InstalledPackages(BaseInstalledPackages):
+    def __init__(self, glob=False):
+        super(InstalledPackages, self).__init__()
+        self.glob = glob
+
     def evaluate(self):
-        package_list = subprocess.Popen([
-            which.npm,
+        cmd = [which.npm]
+        if self.glob:
+            cmd.append('-g')
+
+        cmd.extend([
             'ls',
             '--json',
             '--depth=0'
-        ],
+        ])
+        package_list = subprocess.Popen(
+            cmd,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -45,6 +54,7 @@ class InstalledPackages(BaseInstalledPackages):
 
 
 installed_packages = InstalledPackages()
+global_installed_packages = InstalledPackages(glob=True)
 
 
 @task
@@ -66,7 +76,9 @@ def npm_install(args):
 @consume_args
 def npm_check(args):
     """Install a npm package if it's not installed"""
-    packages = [package for package in args if package not in installed_packages]
+    packages = [package for package in args
+                if package not in installed_packages and
+                package not in global_installed_packages]
 
     if packages:
         call_task('npm_install', args=packages)
