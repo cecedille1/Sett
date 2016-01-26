@@ -76,7 +76,6 @@ def run_ruby(command, *args, **kw):
 
 @task
 @consume_args
-@which.update
 def gem(args):
     if args[0] == 'install':
         args[1:1] = [
@@ -85,6 +84,7 @@ def gem(args):
             '--no-ri',
             '--no-rdoc',
         ]
+    which.update()
     sh([which.gem] + args)
 
 
