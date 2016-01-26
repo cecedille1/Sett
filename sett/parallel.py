@@ -39,12 +39,17 @@ class Linear(object):
 
 
 class Threaded(object):
+    INITIAL, STARTED, ENDING, ENDED = range(4)
+
     def __init__(self, fn, n=4):
         self._fn = fn
         self._queue = queue.Queue()
         self._threads = [threading.Thread(target=self._worker(x)) for x in range(n)]
-        self.started = False
+        self.status = Threaded.INITIAL
         self.failed_tasks = []
+
+    def __repr__(self):
+        return 'Threaded({}, {})<{!r}>'.format(len(self._threads), self.status, self._fn)
 
     def for_each(self, iterable):
         try:
@@ -54,10 +59,11 @@ class Threaded(object):
             self.wait()
 
     def start(self):
+        assert self.status == Threaded.INITIAL
         debug('Starting %s threads', len(self._threads))
         for t in self._threads:
             t.start()
-        self.started = True
+        self.status = Threaded.STARTED
 
     def _worker(self, n):
         def worker():
@@ -65,25 +71,32 @@ class Threaded(object):
                 try:
                     args, kw = self._queue.get()
                     if args is None:
+                        debug('%s: I see the light at the end of the tunnel', n)
                         break
                     debug('%s: Got a task', n)
                     self._fn(*args, **kw)
-                    debug('%s: Finishing a task', n)
                 except Exception as e:
                     self.failed_tasks.append((args, kw, e))
                 finally:
-                    debug('%s: I see the light at the end of the tunnel', n)
+                    debug('%s: Finishing a task', n)
                     self._queue.task_done()
+
+        worker.__name__ = 'Worker {}'.format(n)
         return worker
 
     def __call__(self, *args, **kw):
-        if not self.started:
+        if self.status == Threaded.INITIAL:
             self.start()
+
+        assert self.status == Threaded.STARTED
         self._queue.put((args, kw))
 
     def wait(self):
-        if not self.started:
+        if self.status == Threaded.INITIAL:
             return
+
+        assert self.status == Threaded.STARTED
+        self.status = Threaded.ENDING
 
         self._queue.join()
 
@@ -94,7 +107,7 @@ class Threaded(object):
         for t in self._threads:
             t.join()
 
+        self.status = Threaded.ENDED
         if self.failed_tasks:
             raise RuntimeError('Those tasks failed: {}'.format(self.failed_tasks))
-
         return True
