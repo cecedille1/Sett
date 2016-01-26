@@ -84,8 +84,8 @@ def gem(args):
             '--no-ri',
             '--no-rdoc',
         ]
-    which.update()
     sh([which.gem] + args)
+    which.update()
 
 
 @task

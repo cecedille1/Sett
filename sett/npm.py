@@ -60,8 +60,8 @@ global_installed_packages = InstalledPackages(glob=True)
 @task
 @consume_args
 def npm(args):
-    which.update()
     sh([which.npm] + args)
+    which.update()
 
 
 @task
