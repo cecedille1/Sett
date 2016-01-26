@@ -14,9 +14,9 @@ from paver.easy import debug
 def parallel(fn=None, **kw):
     def inner_parallel(fn):
         debug('Running %s %s ', 'parallel' if defaults.USE_THREADING else 'linear', fn)
-        if defaults.USE_THREADING:
-            return Threaded(fn, **kw)
-        return Linear(fn, **kw)
+        if not defaults.USE_THREADING or kw.get('n') == 1:
+            return Linear(fn, **kw)
+        return Threaded(fn, **kw)
 
     if fn is None:
         return inner_parallel
@@ -47,9 +47,11 @@ class Threaded(object):
         self.failed_tasks = []
 
     def for_each(self, iterable):
-        for i in iterable:
-            self(i)
-        self.wait()
+        try:
+            for i in iterable:
+                self(i)
+        finally:
+            self.wait()
 
     def start(self):
         debug('Starting %s threads', len(self._threads))
