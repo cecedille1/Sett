@@ -38,14 +38,14 @@ class TestRJSBuilder(unittest.TestCase):
         rjsb = RJSBuilder('app', '/abc/def', build_class=BC)
         rjsb(self.FS, ['app/app', 'views/view'])
         BC.assert_called_once_with('app/app', self.FS, ('/abc/def/app/app.js'), mock.ANY, mock.ANY)
-        self.parallel.assert_called_once_with(BC.return_value)
+        self.parallel.for_each.assert_called_once_with([BC.return_value])
 
     def test_call_without_args(self):
         BC = mock.Mock(name='RJSBuild')
         rjsb = RJSBuilder('app', '/abc/def', build_class=BC)
         rjsb(self.FS, [])
         BC.assert_called_once_with('app/app', self.FS, ('/abc/def/app/app.js'), mock.ANY, mock.ANY)
-        self.parallel.assert_called_once_with(BC.return_value)
+        self.parallel.for_each.assert_called_once_with([BC.return_value])
 
 
 class TestRJSBuild(unittest.TestCase):
