@@ -111,9 +111,15 @@ class Success(collections.namedtuple('Success', ['line', 'additions', 'changes']
 
 
 class Evaluation(collections.namedtuple('Evaluation', ['line', 'evaluation'])):
+    @property
+    def evaluation_repr(self):
+        if isinstance(self.evaluation, dict):
+            return '{\n%s\n}' % ''.join('    {!r}: {!r}\n'.format(*args) for args in self.evaluation.items())
+        return repr(self.evaluation)
+
     @text_repr
     def __str__(self):
-        return u'{}\n    {}'.format(self.line, self.evaluation)
+        return u'{}\n    {}'.format(self.line, self.evaluation_repr)
 
 
 class Executor(object):
