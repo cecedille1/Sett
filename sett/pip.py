@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import sys
 
 from paver.easy import consume_args, consume_nargs, task, sh, call_task, path, info
-from sett import ROOT, defaults
+from sett import ROOT, defaults, which
 from sett.utils import BaseInstalledPackages
 
 try:
@@ -15,8 +15,17 @@ except ImportError:
     from urllib.parse import urlparse
 
 
-VENV_BIN = path(sys.executable).dirname()
-VENV_DIR = VENV_BIN.dirname()
+class NotAPath(object):
+    def exists(self):
+        return False
+
+
+VENV_DIR = path(sys.prefix)
+
+if hasattr(sys, 'real_prefix'):
+    VENV_BIN = VENV_DIR.joinpath('bin')
+else:
+    VENV_BIN = NotAPath()
 
 
 class InstalledPackages(BaseInstalledPackages):
@@ -36,8 +45,6 @@ installed_packages = InstalledPackages()
 @consume_args
 def pip(args):
     """Run a pip command"""
-    pip_bin = VENV_BIN.joinpath('pip')
-
     if args[0] == 'install':
         if defaults.PYPI_PACKAGE_INDEX:
             extra = ['--index-url', defaults.PYPI_PACKAGE_INDEX]
@@ -46,7 +53,8 @@ def pip(args):
                 extra.extend(['--trusted-host', url.netloc])
         args[1:1] = extra
 
-    sh([pip_bin] + args)
+    sh([which.pip] + args)
+    which.update()
 
 
 @task
