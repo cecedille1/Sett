@@ -12,7 +12,7 @@ import collections
 
 from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path)
-from paver.deps.six import string_types
+from paver.deps.six import text_type
 
 from sett import which, DeployContext, defaults, task_alternative, optional_import
 
@@ -250,8 +250,8 @@ if django_module:
                 values = [values]
 
             for value in values:
-                sys.argv.append('--' + key)
-                sys.argv.append(str(value))
+                sys.argv.append(u'--' + key)
+                sys.argv.append(text_type(value))
 
         debug('Calling django test with %s', sys.argv)
         call_command('test', verbosity=verbosity)
