@@ -12,6 +12,7 @@ import collections
 
 from paver.easy import (task, consume_nargs, consume_args, might_call,
                         call_task, sh, no_help, info, needs, debug, path)
+from paver.deps.six import string_types
 
 from sett import which, DeployContext, defaults, task_alternative, optional_import
 
@@ -236,3 +237,21 @@ if django_module:
     def django_shell():
         """alias for `django shell`"""
         call_task('django_cmd', args=['shell'])
+
+    @task_alternative(10)
+    def test_runner(options):
+        from django.core.management import call_command
+        verbosity = int(options.test_runner.verbosity) if 'verbosity' in options.test_runner else 0
+
+        del sys.argv[2:]
+
+        for key, values in options.test_runner.items():
+            if not isinstance(values, list):
+                values = [values]
+
+            for value in values:
+                sys.argv.append('--' + key)
+                sys.argv.append(str(value))
+
+        debug('Calling django test with %s', sys.argv)
+        call_command('test', verbosity=verbosity)

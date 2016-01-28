@@ -7,8 +7,8 @@ import os
 import optparse
 import importlib
 
-from paver.easy import task, needs, cmdopts, call_task, path, sh, debug
-from sett import which, defaults
+from paver.easy import task, needs, cmdopts, call_task, path, sh, debug, environment
+from sett import which, defaults, task_alternative
 
 
 class TestsNameGenerator(object):
@@ -31,37 +31,82 @@ class TestsNameGenerator(object):
         ])
 
 
-def _nosetests(options):
-    nosetest_options = {}
+class NosetestsOptions(object):
+    def __init__(self, options=None):
+        self._options = options or {}
 
-    if hasattr(options, 'xunit'):
-        nosetest_options.update({
+    def __call__(self, values):
+        options = {}
+        if 'xunit' in values:
+            options.update(self.xunit(values.xunit))
+        options['tests'] = self.tests(values)
+        options.update(self._options)
+        return options
+
+    def xunit(self, filename):
+        return {
             'with-xunit': True,
-            'xunit-file': options.xunit,
+            'xunit-file': filename,
             'verbosity': '0',
-        })
+        }
 
-    if hasattr(options, 'auto'):
+    def tests(self, options):
+        if 'auto' in options:
+            return self.auto(options.auto)
+        if 'test' in options:
+            return options.test
+
+        return self.default_tests()
+
+    def auto(self, names):
         generator = TestsNameGenerator(defaults.TESTS_ROOT,
                                        defaults.TESTS_NAMING,
                                        defaults.TESTS_FILE_PREFIX)
-        tests = [generator(name) for name in options.auto]
-    elif hasattr(options, 'test'):
-        tests = options.test
-    elif defaults.TESTS_ROOT:
-        try:
-            importlib.import_module(defaults.TESTS_ROOT)
-        except ImportError:
-            raise RuntimeError('Cannot import the tests, does a package named {} exists?'.format(
-                defaults.TESTS_ROOT,
-            ))
+        return [generator(name) for name in names]
 
-        tests = [defaults.TESTS_ROOT]
-    else:
-        tests = []
+    def default_tests(self):
+        if defaults.TESTS_ROOT:
+            try:
+                importlib.import_module(defaults.TESTS_ROOT)
+            except ImportError:
+                raise RuntimeError('Cannot import the tests, does a package named {} exists?'.format(
+                    defaults.TESTS_ROOT,
+                ))
+            return [defaults.TESTS_ROOT]
+        return []
 
-    nosetest_options['tests'] = tests
-    return nosetest_options
+
+class NosetestsCoverageOptions(NosetestsOptions):
+    def __init__(self, options=None):
+        options = options or {}
+        options.setdefault('cover-erase', True)
+        super(NosetestsCoverageOptions, self).__init__(options)
+
+    def __call__(self, values):
+        options = super(NosetestsCoverageOptions, self).__call__(values)
+
+        if 'xcoverage' in values:
+            options['with-xcoverage'] = True
+            options.update(self.xcoverage(values.xcoverage))
+        else:
+            options['with-coverage'] = True
+
+        options['cover-package'] = self.cover_packages(values)
+        return options
+
+    def cover_packages(self, values):
+        if 'auto' in values:
+            return values.auto
+        if 'packages' in values:
+            return values.packages
+        return list(set(x.split('.')[0]
+                        for x in environment.options.setup.get('packages', [])))
+
+    def xcoverage(self, filename):
+        return {
+            'xcoverage-file': filename,
+            'xcoverage-to-stdout': sys.version_info > (3, 0),
+        }
 
 
 @task
@@ -80,7 +125,8 @@ def _nosetests(options):
 ])
 def test(options):
     """Runs the tests"""
-    return call_task('nosetests', options=_nosetests(options.test))
+    nto = NosetestsOptions()
+    return call_task('test_runner', options=nto(options.test))
 
 
 @task
@@ -105,36 +151,14 @@ def test(options):
 ])
 def coverage(options):
     """Runs the unit tests and compute the coverage"""
+    nto = NosetestsCoverageOptions()
+    return call_task('test_runner', options=nto(options.coverage))
 
-    nosetest_options = _nosetests(options.coverage)
-    nosetest_options.update({
-        'cover-erase': True,
-    })
 
-    if hasattr(options.coverage, 'xcoverage'):
-        nosetest_options.update({
-            'with-xcoverage': True,
-            'xcoverage-file': options.coverage.xcoverage,
-            'xcoverage-to-stdout': sys.version_info > (3, 0),
-        })
-    else:
-        nosetest_options.update({
-            'with-coverage': True,
-        })
-
-    if hasattr(options.coverage, 'auto'):
-        packages = options.coverage.auto
-    elif hasattr(options.coverage, 'packages'):
-        packages = options.coverage.packages
-    else:
-        packages = list(set(x.split('.')[0] for x in options.setup.get('packages')))
-
-    nosetest_options.update({
-        'cover-package': packages,
-    })
-
-    debug('nosetests %s', nosetest_options)
-    return call_task('nosetests', options=nosetest_options)
+@task_alternative(100)
+def test_runner(options):
+    debug('options are %s', options.test_runner)
+    call_task('nosetests', options=options.test_runner)
 
 
 @task
