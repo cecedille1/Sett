@@ -240,10 +240,11 @@ if django_module:
 
     @task_alternative(10)
     def test_runner(options):
+        debug(options)
         from django.core.management import call_command
-        verbosity = int(options.test_runner.verbosity) if 'verbosity' in options.test_runner else 0
+        verbosity = int(options.test_runner.verbosity) if 'verbosity' in options.test_runner else 1
 
-        del sys.argv[2:]
+        del sys.argv[1:]
 
         for key, values in options.test_runner.items():
             if not isinstance(values, list):
