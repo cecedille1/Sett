@@ -10,25 +10,69 @@ except ImportError:
     import sys
     import os
     sys.path.append(os.path.dirname(__file__))
-    import sett
 
 
-from paver.easy import task, call_task
-from sett import DeployContext, defaults, ROOT
-from sett.source import FileReplacer
+from paver.easy import task
+from paver.deps.six import exec_
 
 
-defaults.UWSGI_SOCKET_TYPE = 'http'
+def find_version(filename):
+    filepath = os.path.join(os.path.dirname(__file__), filename)
+    with open(filepath, 'rt') as init:
+        for line in init:
+            if line.startswith('__version__'):
+                x, version = line.split('=', 1)
+                return version.strip().strip('\'"')
+        else:
+            raise ValueError('Cannot find the version in {0}'.format(filename))
 
 
-@DeployContext.register
-def set_wsgi_application():
-    return {
-        'wsgi_application': 'sett.pavement'
-    }
+def parse_requirements(requirements_txt):
+    requirements = []
+    try:
+        with open(requirements_txt, 'rt') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                if line.startswith('-'):
+                    raise ValueError('Unexpected command {0} in {1}'.format(
+                        line,
+                        requirements_txt,
+                    ))
+
+                requirements.append(line)
+        return requirements
+    except IOError:
+        return []
 
 
 @task
-@FileReplacer(ROOT.joinpath('requirements_minimal.txt'), ROOT.joinpath('requirements.txt'))
-def make_minimal():
-    call_task('sett.build.make')
+def setup_options():
+    from paver.setuputils import setup
+    import setuptools
+
+    setup(
+        name='sett',
+        version=find_version('sett/__init__.py'),
+        packages=setuptools.find_packages(
+            include=[
+                'sett',
+            ],
+            exclude=[
+            ]
+        ),
+        url='https://github.org/cecedille1/sett',
+        author=u'Grégoire ROCHER',
+        author_email='gr@enix.org',
+        install_requires=parse_requirements('requirements.txt'),
+        include_package_data=True,
+    )
+
+
+try:
+    from sett import ROOT
+    with open(ROOT.joinpath('localpavement.py'), 'r') as localpavement:
+        exec_(localpavement.read(), locals(), globals())
+except (IOError, ImportError) as e:
+    pass
