@@ -29,7 +29,14 @@ PYPI_PACKAGE_INDEX_IGNORE_SSL = False
 
 
 # The name of the directory containing compass sass sources
-COMPASS_DIR = 'compass'
+SASS_SRC_DIR = COMPASS_DIR = 'compass/'
+
+# The destination of the built CSS files, absolute or relative to ROOT
+SASS_BUILD_DIR = 'static/css'
+
+# The style of the CSS ouput
+SASS_OUTPUT_STYLE = 'compact'
+
 SCSS_LINT_CONFIG = 'compass/.scss-lint.yml'
 
 
@@ -102,3 +109,6 @@ UWSGI_EXTRA = {}
 
 
 SUPERVISORDCONF = 'etc/supervisord/supervisord.conf'
+
+# A list or a ':' joined string of path to include in the generation of Sass files
+SASS_PATH = os.environ.get('SASS_PATH', '')
