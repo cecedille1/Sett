@@ -9,7 +9,7 @@ from paver.deps.six import string_types
 
 observers = optional_import('watchdog.observers')
 events = optional_import('watchdog.events')
-libsass = optional_import('sass')
+libsass = optional_import('sass', 'libsass')
 
 
 @task
