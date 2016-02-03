@@ -5,15 +5,18 @@
 DISABLED_LIBS = ['django']
 
 try:
-    import sett
+    import sett  # noqa
 except ImportError:
     import sys
     import os
     sys.path.append(os.path.dirname(__file__))
 
 
-from paver.easy import task
+from paver.easy import task, call_task
 from paver.deps.six import exec_
+
+from sett import ROOT
+from sett.source import FileReplacer
 
 
 def find_version(filename):
@@ -70,8 +73,13 @@ def setup_options():
     )
 
 
+@task
+@FileReplacer(ROOT.joinpath('requirements_minimal.txt'), ROOT.joinpath('requirements.txt'))
+def make_minimal():
+    call_task('sett.build.make')
+
+
 try:
-    from sett import ROOT
     with open(ROOT.joinpath('localpavement.py'), 'r') as localpavement:
         exec_(localpavement.read(), locals(), globals())
 except (IOError, ImportError) as e:
