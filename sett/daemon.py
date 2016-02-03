@@ -11,11 +11,11 @@ from paver.easy import path, info, consume_nargs, task, debug
 
 from paver.shell import _shlex_quote
 
+from sett import ROOT
+
 
 def shlex_quote(args):
     return ' '.join(_shlex_quote(quoted) for quoted in args)
-
-from sett import ROOT
 
 
 RUN_DIR = ROOT.joinpath('var/pid/')

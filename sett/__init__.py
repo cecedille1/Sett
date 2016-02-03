@@ -1,16 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__version__ = '0.9.17'
-
-__all__ = [
-    'which',
-    'optional_import',
-    'parallel',
-    'task_alternative',
-    'DeployContext',
-]
-
 import os
 import sys
 import importlib
@@ -26,6 +16,16 @@ from sett.utils import TaskAlternative, TaskAlternativeTaskFinder
 from paver.path import path
 from paver.easy import debug
 from paver.tasks import environment, Task
+
+__version__ = '0.10.0b2'
+
+__all__ = [
+    'which',
+    'optional_import',
+    'parallel',
+    'task_alternative',
+    'DeployContext',
+]
 
 
 def get_libs(environ=os.environ, pavement=environment.pavement):
