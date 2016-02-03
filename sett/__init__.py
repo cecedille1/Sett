@@ -101,6 +101,7 @@ def init():
     environment.ROOT = ROOT
     environment.defaults = defaults
     environment.deployment = DeployContext
+    environment.which = which
     environment.task_finders.extend([
         TaskAlternativeTaskFinder(loader, task_alternative),
         SettTaskFinder(loader),
