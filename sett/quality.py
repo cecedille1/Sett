@@ -11,6 +11,7 @@ WARNING_CODES = {
     'E12', 'E13',  # Indentation of hanging brackets and paranthesis
     'E2',  # Whitespace between operators and brackets and paranthesis
     'E3',  # Blank lines
+    'E402', # Import at the wrong place
     'E5',  # Line length
     'W292', 'W391',  # \n at the end
 }
