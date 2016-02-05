@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 
+import time
 import os.path
 import collections
 import importlib
+import traceback
+import threading
 
 from sett import optional_import, defaults, ROOT
 from paver.easy import task, info, debug, consume_args, call_task
 from paver.deps.six import string_types
+from paver.deps.six.moves import queue
 
 observers = optional_import('watchdog.observers')
 events = optional_import('watchdog.events')
 libsass = optional_import('sass', 'libsass')
+
+
+# Time to wait for additional events in seconds
+DEBOUNCE_WAIT = 0.250
 
 
 @task
@@ -49,12 +57,10 @@ def sassc_watch():
     debug('Building/watching with %s', s)
     s()
 
-    import time
     try:
-        with Watcher(s):
-            info('Starting watch %s', s)
-            while True:
-                time.sleep(10)
+        watcher = Watcher(s)
+        info('Starting watch %s', s)
+        watcher()
     except KeyboardInterrupt:
         pass
 
@@ -62,40 +68,100 @@ def sassc_watch():
 class EventDispatcher(object):
     """Watchdog compatible event dispatcher. It calls the builder when a file
     is modified and have the right extension"""
-    def __init__(self, builder):
-        self.builder = builder
+    def __init__(self, queue):
         self.extensions = {'.css', '.scss'}
+        self.queue = queue
 
     def dispatch(self, event):
         #  events.FileCreatedEvent triggers FileModifiedEvent
+        debug(event)
         if isinstance(event, (events.FileModifiedEvent)) and event.src_path in self:
-            self.builder(event.src_path)
+            self.queue.put(event.src_path)
 
     def __contains__(self, path):
         stem, ext = os.path.splitext(path)
         if ext not in self.extensions:
             return False
-        if os.path.basename(stem).startswith('_'):
-            return False
         return True
 
 
 class Watcher(object):
-    """Watchdog compatible event dispatcher"""
+    """Watchdog compatible event dispatcher. It can be called in the same
+    thread or started in another thread.
+
+    >>> with Watcher(Sass.default()):
+    ...     call_task('runserver')  # Running an http server and building at the same time
+
+    >>> w = Watcher(Sass.default())
+    >>> w()  # Blocks until it's stopped
+    """
     def __init__(self, builder):
         self.observer = observers.Observer()
+        self.queue = queue.Queue()
+        self._thread = None
+        self._stop = object()
 
         self.watches = {}
         for path in builder.paths:
-            watch = self.observer.schedule(EventDispatcher(builder), path, recursive=True)
+            watch = self.observer.schedule(EventDispatcher(self.queue), path, recursive=True)
+            debug('Watching %s', path)
             self.watches[path] = watch
+        self.builder = builder
 
-    def __enter__(self):
+    def start(self):
+        self.start_observer()
+        assert self._thread is None
+        self._thread = threading.Thread(target=self)
+
+    def stop(self):
+        self.stop_observer()
+        self.queue.put(self._stop)
+        self._thread.join()
+
+    def __call__(self):
+        self.start_observer()
+        debug('Processing loop')
+        while True:
+            path = self.queue.get()
+            if path is self._stop:
+                break
+
+            paths = set()
+            first_event = time.time()
+            try:
+                # Debounce: capture all events occuring 250ms after the fist
+                delay = DEBOUNCE_WAIT
+                while delay > 0:
+                    paths.add(self.queue.get(timeout=delay))
+                    delay = first_event - time.time() + DEBOUNCE_WAIT
+
+            except queue.Empty:
+                pass
+
+            if self._stop in paths:
+                break
+
+            for path in paths:
+                try:
+                    self.builder(path)
+                except:
+                    traceback.print_exc()
+        self.stop_observer()
+
+    def start_observer(self):
+        debug('Start observer')
         self.observer.start()
 
-    def __exit__(self, exc_value, exc_type, traceback):
+    def stop_observer(self):
+        debug('Stop observer')
         self.observer.stop()
         self.observer.join()
+
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, exc_value, exc_type, tb):
+        self.stop()
 
 
 class BaseSass(object):
