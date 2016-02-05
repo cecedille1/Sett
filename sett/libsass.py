@@ -2,6 +2,7 @@
 
 import os.path
 import collections
+import importlib
 
 from sett import optional_import, defaults, ROOT
 from paver.easy import task, info, debug, consume_args, call_task
@@ -112,20 +113,40 @@ class BaseSass(object):
         return []
 
     @classmethod
+    def get_default_functions(self):
+        functions = []
+        functions_names = ([defaults.SASS_FUNCTIONS]
+                           if isinstance(defaults.SASS_FUNCTIONS, string_types) else
+                           defaults.SASS_FUNCTIONS)
+
+        for sassf in functions_names:
+            if isinstance(sassf, string_types):
+                module = importlib.import_module(sassf)
+                functions.extend(f for f in vars(module).values() if isinstance(f, libsass.SassFunction))
+            elif isinstance(sassf, libsass.SassFunction):
+                functions.append(sassf)
+            else:
+                raise TypeError('unexpected %s in defaults.SASS_FUNCTIONS' % sassf)
+
+        return functions
+
+    @classmethod
     def default(cls):
         return cls(
             ROOT.joinpath(defaults.SASS_SRC_DIR, 'scss'),
             ROOT.joinpath(defaults.SASS_BUILD_DIR),
             cls.get_default_paths(),
+            cls.get_default_functions(),
         )
 
-    def __init__(self, src, dest, include_paths):
+    def __init__(self, src, dest, include_paths, functions):
         self._src = src
         self._dest = dest
         self._deps = set()
         self._paths = [
             self._src,
         ] + include_paths
+        self._functions = functions
 
     @property
     def paths(self):
@@ -141,6 +162,7 @@ class BaseSass(object):
     def get_compile_kwargs(self):
         return {
             'output_style': defaults.SASS_OUTPUT_STYLE,
+            'custom_functions': self._functions,
             'include_paths': self._paths,
         }
 

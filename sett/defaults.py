@@ -37,6 +37,8 @@ SASS_BUILD_DIR = 'static/css'
 # The style of the CSS ouput
 SASS_OUTPUT_STYLE = 'compact'
 
+SASS_FUNCTIONS = []
+
 SCSS_LINT_CONFIG = 'compass/.scss-lint.yml'
 
 
