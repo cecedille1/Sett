@@ -110,6 +110,9 @@ class FakeModule(object):
     def __call__(self, *args, **kw):
         self._raise()
 
+    def __repr__(self):
+        return 'FakeModule({})'.format(self._name)
+
     def __bool__(self):
         return False
 
