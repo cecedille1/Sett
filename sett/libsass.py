@@ -9,8 +9,7 @@ import threading
 
 from sett import optional_import, defaults, ROOT
 from paver.easy import task, info, debug, consume_args, call_task
-from paver.deps.six import string_types
-from paver.deps.six.moves import queue
+from paver.deps.six import string_types, moves
 
 observers = optional_import('watchdog.observers')
 events = optional_import('watchdog.events')
@@ -97,7 +96,7 @@ class Watcher(object):
     """
     def __init__(self, builder):
         self.observer = observers.Observer()
-        self.queue = queue.Queue()
+        self.queue = moves.queue.Queue()
         self._thread = None
         self._stop = object()
 
