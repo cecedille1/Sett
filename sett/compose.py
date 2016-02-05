@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 
 from sett import optional_import
 from paver.easy import task, consume_nargs, info
@@ -28,6 +29,36 @@ class DockerCompose(object):
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.project.name)
+
+    def environment(self, service):
+        container = self._container(service)
+        environ = {}
+        name = service.upper()
+
+        ignore_env = {'PATH'}
+        for key, value in container.environment.items():
+            if key in ignore_env:
+                continue
+            environ['{}_ENV_{}'.format(name, key)] = value
+
+        ip = container.get('NetworkSettings.IPAddress')
+        for port in container.ports.keys():
+            number, proto = port.split('/')
+            context = {
+                'name': name,
+                'proto': proto,
+                'PROTO': proto.upper(),
+                'port': number,
+                'addr': ip,
+            }
+            environ.update({
+                '{name}_PORT'.format(**context): '{proto}://{addr}:{port}'.format(**context),
+                '{name}_PORT_{port}_{PROTO}'.format(**context): '{proto}://{addr}:{port}'.format(**context),
+                '{name}_PORT_{port}_{PROTO}_ADDR'.format(**context): ip,
+                '{name}_PORT_{port}_{PROTO}_PORT'.format(**context): number,
+                '{name}_PORT_{port}_{PROTO}_PROTO'.format(**context): proto,
+            })
+        return environ
 
     def _run(self, *args, **kw):
         volumes_from = kw.pop('volumes_from')
@@ -80,10 +111,23 @@ class DockerCompose(object):
 
     def __enter__(self):
         self.up()
+
+        all_env = {}
+        for s in self.project.get_services():
+            all_env.update(self.environment(s.name))
+
+        self._prev_env = {k: os.environ.get(k) for k in all_env}
+        os.environ.update(all_env)
         return self
 
     def __exit__(self, exc_value, exc_type, tb):
+        for k, v in self._prev_env.items():
+            if v is None:
+                del os.environ[k]
+            else:
+                os.environ[k] = self.prev_env[k]
         self.down()
+        del self._prev_env
 
 
 @task
