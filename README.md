@@ -281,3 +281,50 @@ gem_check, npm_check) that install the programs only if it is not already
 installed and do that with checking only the local filesystem. (gem and npm
 always check the remote repository for update and it takes a ridiculously long
 time).
+
+### Sass
+
+Sett include tasks to build .sass and .scss files with libsass. The commands
+sassc_compile to build and sassc_watch to build as soon as a scss file is
+written. The command ``sass`` is a shortcut to those command.
+
+
+Theses two groups of commands have each the same effect.
+
+```
+    $ paver sass
+    $ paver sass compile
+    $ paver sassc_compile
+
+    $ paver sassc_watch
+    $ paver sass watch
+
+```
+
+Sass is also embedable in a pavement to run while another task is running. Eg
+to run the Sass watcher and the web server simultaneously:
+
+```
+    from sett.libsass import Watcher, Sass
+    with Watcher(Sass.default()):
+        call_task('runserver')
+```
+
+Sass use some parameters configurable through the ``defaults``. The first
+**SASS_SRC_DIR** and **SASS_BUILD_DIR** are the source and the target of sccs
+files and the css output directory. The hierarchy of directories inside the
+source dir are copied in the build dir. They defaults respectively to compass/
+and static/css.
+
+The **SASS_PATH** is a list of path, either as `:` joined string or as a python
+list of strings. It defaults to the environment variable SASS_PATH, or to
+``bower_components/`` if it exists. This list of paths with the addition of the
+src dir are submitted to the compile function of libsass.
+
+The **SASS_FUNCTIONS** is a python dotted module path or list of thoses or a
+list of sass.SassFunction or a combination of modules path and SassFunction.
+When it is a python dotted module path, this path is imported, and all
+SassFunction defined inside are collected. The whole list of SassFunction are used
+by libsass to compile the files.
+
+The **SASS_OUTPUT_STYLE** is the style of build: 'compact', cf sass.OUTPUT_STYLES.
