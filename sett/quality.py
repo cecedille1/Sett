@@ -3,7 +3,7 @@
 
 import sys
 
-from paver.easy import task, needs, cmdopts, sh
+from paver.easy import task, needs, cmdopts, sh, error
 from sett import which
 
 
@@ -11,7 +11,7 @@ WARNING_CODES = {
     'E12', 'E13',  # Indentation of hanging brackets and paranthesis
     'E2',  # Whitespace between operators and brackets and paranthesis
     'E3',  # Blank lines
-    'E402', # Import at the wrong place
+    'E402',  # Import at the wrong place
     'E5',  # Line length
     'W292', 'W391',  # \n at the end
 }
@@ -61,4 +61,5 @@ def quality(options):
             if code[0:x + 1] in WARNING_CODES:
                 break
         else:
+            error('Failure of quality check')
             raise SystemExit(1)
