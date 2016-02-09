@@ -134,7 +134,7 @@ class Watcher(object):
                     paths.add(self.queue.get(timeout=delay))
                     delay = first_event - time.time() + DEBOUNCE_WAIT
 
-            except queue.Empty:
+            except moves.queue.Empty:
                 pass
 
             if self._stop in paths:
