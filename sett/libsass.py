@@ -8,7 +8,7 @@ import traceback
 import threading
 
 from sett import optional_import, defaults, ROOT
-from paver.easy import task, info, debug, consume_args, call_task
+from paver.easy import task, info, debug, consume_args, call_task, path, error
 from paver.deps.six import string_types, moves
 
 observers = optional_import('watchdog.observers')
@@ -101,16 +101,17 @@ class Watcher(object):
         self._stop = object()
 
         self.watches = {}
-        for path in builder.paths:
-            watch = self.observer.schedule(EventDispatcher(self.queue), path, recursive=True)
-            debug('Watching %s', path)
-            self.watches[path] = watch
+        for filepath in builder.paths:
+            watch = self.observer.schedule(EventDispatcher(self.queue), filepath, recursive=True)
+            debug('Watching %s', filepath)
+            self.watches[filepath] = watch
         self.builder = builder
 
     def start(self):
         self.start_observer()
         assert self._thread is None
-        self._thread = threading.Thread(target=self)
+        self._thread = threading.Thread(target=self.run)
+        self._thread.start()
 
     def stop(self):
         self.stop_observer()
@@ -120,6 +121,12 @@ class Watcher(object):
     def __call__(self):
         self.start_observer()
         debug('Processing loop')
+        try:
+            self.run()
+        finally:
+            self.stop_observer()
+
+    def run(self):
         while True:
             path = self.queue.get()
             if path is self._stop:
@@ -145,7 +152,6 @@ class Watcher(object):
                     self.builder(path)
                 except:
                     traceback.print_exc()
-        self.stop_observer()
 
     def start_observer(self):
         debug('Start observer')
@@ -238,25 +244,29 @@ class BaseSass(object):
             self._build_all()
 
     def _build_file(self, filename):
-        info('Build %s', filename)
         kwargs = self.get_compile_kwargs()
 
         infile = self._src.joinpath(filename)
-        result = libsass.compile(filename=infile, **kwargs)
+        try:
+            result = libsass.compile(filename=infile, **kwargs)
+        except Exception as e:
+            error('Cannot build %s: %s', infile, e)
+            raise
         relative_infile = os.path.relpath(infile, self._src)
 
-        outfile = self._dest.joinpath(relative_infile)
+        outfile = self._dest.joinpath(relative_infile).stripext() + '.css'
         if not outfile.parent.isdir():
             outfile.parent.makedirs_p()
 
-        debug('Writing in %s', outfile)
+        info('Build %s -> %s', filename, outfile)
         with open(outfile, 'wb') as out_stream:
             out_stream.write(result.encode('utf-8'))
 
     def _build_all(self):
-        info('Build all')
-        kwargs = self.get_compile_kwargs()
-        libsass.compile(dirname=(self._src, self._dest), **kwargs)
+        for filename in path(self._src).walkfiles():
+
+            if filename.ext in {'.scss', '.sass'} and not filename.basename().startswith('_'):
+                self._build_file(filename)
 
 
 class Sass(BaseSass):
