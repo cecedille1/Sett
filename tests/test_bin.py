@@ -5,7 +5,7 @@ import unittest
 import os.path
 
 try:
-    import unittest.mock
+    import unittest.mock as mock
 except ImportError:
     import mock
 

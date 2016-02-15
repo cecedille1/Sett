@@ -92,8 +92,8 @@ class DeployContextFactory(object):
                     continue
 
                 current = context[key]
-                if ((isinstance(value, (dict, list)) or isinstance(current, (dict, list)))
-                        and type(current) != type(value)):
+                if ((isinstance(value, (dict, list)) or isinstance(current, (dict, list))) and
+                        type(current) != type(value)):
                     raise TypeError('Type mismatch: Expected a %r for %s but got a %r' %
                                     (type(current), key, type(value)))
 

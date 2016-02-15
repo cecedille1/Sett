@@ -27,6 +27,7 @@ def test_curl_get():
     response.headers = {
         'content-type': 'text/plain',
     }
+    response.text = 'response\n'
 
     with mock.patch.multiple('sett.curl',
                              requests=requests,

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import re
 from paver.easy import task, consume_nargs, debug, info, environment
 
 from sett.utils import optional_import, task_name as rename_task
@@ -108,22 +107,14 @@ def docker_environment(container_inspect, alias=None, ignore_env={'PATH'}):
     return environ
 
 
-class DockerTaskLoader(object):
-    task_re = re.compile(r'^docker\('
-                         '(\w+)'  # Matches the container name
-                         '(?::(\w+))?'  # Matches the eventual alias
-                         '\)$')
-
-    def get_tasks(self):
-        return []
-
-    def get_task(self, task_name):
-        matching = self.task_re.match(task_name)
-        if matching is None:
-            return None
-        name, alias = matching.groups()
-        return docker_started_task(name, alias, task_name=task_name)
-
-
 if docker:
-    environment.task_finders.append(DockerTaskLoader())
+    from sett.task_loaders import RegexpTaskLoader
+    environment.task_finders.append(
+        RegexpTaskLoader(
+            r'^docker\('
+            '(\w+)'  # Matches the container name
+            '(?::(\w+))?'  # Matches the eventual alias
+            '\)$',
+            docker_started_task,
+        )
+    )

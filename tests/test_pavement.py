@@ -24,7 +24,7 @@ def eval_paver(pavement, *args):
     )
     out = process.stdout.read()
     assert process.wait() == 0, 'OUT: {}\nERR: {}\n'.format(out, process.stderr.read())
-    return out
+    return out.decode('utf-8')
 
 
 def test_1_t():

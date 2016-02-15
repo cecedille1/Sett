@@ -3,7 +3,7 @@
 import unittest
 
 try:
-    import unittest.mock
+    import unittest.mock as mock
 except ImportError:
     import mock
 
@@ -131,7 +131,6 @@ class TestDaemon(unittest.TestCase):
                    daemonize=['-D', '--pidfile', '/run/pid'],
                    )
         self.assertEqual(d.daemon_command, '/usr/bin/sshd -d -c \'/etc/sshd/sshd config\' -D --pidfile /run/pid')
-
 
     def test_status_running(self):
         d = Daemon(['ls'], pid_file='/run/pid')

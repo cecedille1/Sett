@@ -11,7 +11,7 @@ from sett.utils import optional_import
 from sett.paths import ROOT
 from sett.parallel import parallel
 from sett.deploy_context import DeployContext
-from sett.utils import TaskAlternative, TaskAlternativeTaskFinder
+from sett.task_loaders import TaskAlternative, TaskAlternativeTaskFinder
 
 from paver.path import path
 from paver.easy import debug
