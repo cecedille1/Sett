@@ -2,18 +2,19 @@
 # -*- coding: utf-8 -*-
 
 
+import os
+
+from paver.easy import task, call_task
+from paver.deps.six import exec_
+
+
 DISABLED_LIBS = ['django']
 
 try:
     import sett  # noqa
 except ImportError:
     import sys
-    import os
     sys.path.append(os.path.dirname(__file__))
-
-
-from paver.easy import task, call_task
-from paver.deps.six import exec_
 
 from sett import ROOT
 from sett.source import FileReplacer
@@ -61,6 +62,7 @@ def setup_options():
         packages=setuptools.find_packages(
             include=[
                 'sett',
+                'sett.*',
             ],
             exclude=[
             ]
