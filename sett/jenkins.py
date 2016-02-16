@@ -11,10 +11,19 @@ def jenkins():
     # Generate coverage.xml
     # Generate flake8.log
 
-    call_task('quality', options={
-        'output': 'flake8.log',
-    })
+    try:
+        call_task('quality', options={
+            'output': 'flake8.log',
+            'strictness': 2,
+        })
+    except SystemExit:
+        quality_ok = False
+    else:
+        quality_ok = True
+
     call_task('coverage', options={
         'xunit': 'nosetests.xml',
         'xcoverage': 'coverage.xml',
     })
+    if not quality_ok:
+        raise SystemExit(1)
