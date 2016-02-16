@@ -108,6 +108,7 @@ def init():
     ])
 
     init = getattr(environment.pavement, 'init', None)
+    debug('Initializing %s', init)
     if init and callable(init):
         init(environment)
 
