@@ -35,3 +35,8 @@ def test_1_t():
 def test_1_t1():
     evaluation = eval_paver('test_1.py', 't1')
     assert evaluation == 't1\n', repr(evaluation)
+
+
+def test_init():
+    evaluation = eval_paver('test_init.py', 't1', 't2')
+    assert evaluation == '1\n2\n', repr(evaluation)

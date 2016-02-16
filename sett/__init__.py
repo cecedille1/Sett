@@ -112,10 +112,23 @@ def init():
         init(environment)
 
 
+def install_init():
+    import paver.tasks
+    initialized = False
+    super_process_commands = paver.tasks._process_commands
+
+    def _process_commands(*args, **kw):
+        if not initialized:
+            init()
+        super_process_commands(*args, **kw)
+
+    paver.tasks._process_commands = _process_commands
+
+
 sys.modules['sett'] = SettModule(sys.modules['sett'])
 sys.path.append(ROOT)
 task_alternative = TaskAlternative(environment)
 loader = SettTaskLoader(*get_libs())
 
 
-init()
+install_init()
