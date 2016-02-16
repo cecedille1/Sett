@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from paver.easy import task, consume_nargs, debug, info
+import os
+import re
+from paver.easy import task, consume_nargs, debug, info, environment
 
-from sett.utils import optional_import
+from sett.utils import optional_import, task_name as rename_task
 docker = optional_import('docker', 'docker-py')
 
 
@@ -44,6 +46,9 @@ class Container(object):
         except docker.errors.NotFound:
             return None
 
+    def environ(self, alias=None):
+        return docker_environment(self.properties, alias)
+
 
 @task
 @consume_nargs(1)
@@ -59,3 +64,66 @@ def docker_started(args):
     else:
         info('Starting container %s', c)
         c.start()
+
+
+def docker_started_task(container_name, alias=None, task_name=None):
+    @task
+    @rename_task(task_name or container_name)
+    def start_docker():
+        c = Container(container_name)
+
+        if not c.is_started():
+            c.start()
+        os.environ.update(c.environ(alias))
+
+    return start_docker
+
+
+def docker_environment(container_inspect, alias=None, ignore_env={'PATH'}):
+    name = (alias or container_inspect['Name'].lstrip('/')).upper()
+    environ = {}
+    for value in container_inspect['Config']['Env']:
+        key, value = value.split('=', 1)
+        if key in ignore_env:
+            continue
+        environ['{}_ENV_{}'.format(name, key)] = value
+
+    ip = container_inspect['NetworkSettings']['IPAddress']
+    for port in container_inspect['NetworkSettings']['Ports']:
+        number, proto = port.split('/')
+        context = {
+            'name': name,
+            'proto': proto,
+            'PROTO': proto.upper(),
+            'port': number,
+            'addr': ip,
+        }
+        environ.update({
+            '{name}_PORT'.format(**context): '{proto}://{addr}:{port}'.format(**context),
+            '{name}_PORT_{port}_{PROTO}'.format(**context): '{proto}://{addr}:{port}'.format(**context),
+            '{name}_PORT_{port}_{PROTO}_ADDR'.format(**context): ip,
+            '{name}_PORT_{port}_{PROTO}_PORT'.format(**context): number,
+            '{name}_PORT_{port}_{PROTO}_PROTO'.format(**context): proto,
+        })
+    return environ
+
+
+class DockerTaskLoader(object):
+    task_re = re.compile(r'^docker\('
+                         '(\w+)'  # Matches the container name
+                         '(?::(\w+))?'  # Matches the eventual alias
+                         '\)$')
+
+    def get_tasks(self):
+        return []
+
+    def get_task(self, task_name):
+        matching = self.task_re.match(task_name)
+        if matching is None:
+            return None
+        name, alias = matching.groups()
+        return docker_started_task(name, alias, task_name=task_name)
+
+
+if docker:
+    environment.task_finders.append(DockerTaskLoader())

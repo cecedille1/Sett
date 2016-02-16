@@ -328,3 +328,28 @@ SassFunction defined inside are collected. The whole list of SassFunction are us
 by libsass to compile the files.
 
 The **SASS_OUTPUT_STYLE** is the style of build: 'compact', cf sass.OUTPUT_STYLES.
+
+### Docker
+
+Sett provides Docker and docker-compose integration. Docker containers can be
+mapped to paver tasks and called with ``needs``. A custom `TaskLoader` converts
+docker needed containers to a paver task. The syntax is ``docker(`` *container*
+``)``. This way, the task will import even if sett is not installed and
+degrades with a Task not found error. The syntax is close to the one used by
+``docker run --link``. The task can receive an alias with `:alias`. The
+container is started if it is stopped but it is not created. If the container
+does not exist, the needs will fail with an unhanlded exception.
+
+The environment of the container is merged with the environment of the hosting
+process. The \*_PORT_\* and the \*_ENV_\* environment are copied as if it was
+run inside a docker.
+
+```
+@task
+@needs('docker(redis)')
+@needs('docker(postgres:db)')
+def runserver():
+    assert os.environ.get('REDIS_PORT_6379_TCP_ADDR')
+    assert os.environ.get('DB_PORT_5432_TCP_ADDR')
+    call_task('sett.django.runserver')
+```
