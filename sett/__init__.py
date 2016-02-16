@@ -17,7 +17,7 @@ from paver.path import path
 from paver.easy import debug
 from paver.tasks import environment, Task
 
-__version__ = '0.10.2'
+__version__ = '0.10.3'
 
 __all__ = [
     'which',
