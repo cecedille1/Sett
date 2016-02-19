@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from paver.easy import path, task, call_task, needs, info, debug
+from paver.easy import path, task, call_task, needs, info, debug, consume_args, error, sh
 
-from sett import ROOT, defaults
+from sett import ROOT, defaults, which
 from sett.utils import optional_import
+from sett.utils.dispatch import Dispatcher
 from sett.deploy_context import DeployContext
 
 jinja2 = optional_import('jinja2')
@@ -41,6 +42,79 @@ def nginx_conf():
             'FORCE_REWRITE': False,
         }
     })
+
+
+@task
+@needs('setup_options')
+@consume_args
+def systemd(args, options):
+    sdd = SystemdDispatcher(
+        options.setup.name,
+    )
+    for arg in args:
+        sdd(arg)
+
+
+class SystemdDispatcher(Dispatcher):
+    def __init__(self, name, local_service_path=None, system_service_path=None):
+        self.name = name
+        self._local_service_path = local_service_path
+        self._system_service_path = system_service_path
+
+    @property
+    def local_service_path(self):
+        return self._local_service_path or ROOT.joinpath('etc/systemd.service')
+
+    @property
+    def system_service_path(self):
+        return (self._system_service_path or
+                path('/etc/systemd/system/').joinpath('{}.service'.format(self.name)))
+
+    def _systemd(self, *args):
+        sh([which.systemctl] + list(args))
+
+    def _reload(self):
+        self._systemd('daemon-reload')
+
+    @Dispatcher.on('restart', 2)
+    @Dispatcher.on('up', 2)
+    def start(self):
+        """Start the service"""
+        self._systemd('start', self.name)
+
+    @Dispatcher.on('restart', 1)
+    def stop(self):
+        """Stop the service"""
+        self._systemd('stop', self.name)
+
+    @Dispatcher.on('install', 1)
+    @Dispatcher.on('up', 1)
+    def link(self):
+        """Creates a link in the system"""
+        try:
+            self.local_service_path.symlink(self.system_service_path)
+        except OSError:
+            error('Cannot write %s, sudo maybe?', self.system_service_path)
+            info('# ln -s {target} {link}'.format(
+                target=self.local_service_path,
+                link=self.system_service_path,
+            ))
+        else:
+            self._reload()
+
+    @Dispatcher.on('uninstall', 1)
+    def unlink(self):
+        print('unlink')
+        self._reload()
+
+    @Dispatcher.on('install', 2)
+    @Dispatcher.on('up', 3)
+    def enable(self):
+        self._systemd('enable', self.name)
+
+    @Dispatcher.on('uninstall', 2)
+    def disable(self):
+        self._systemd('disable', self.name)
 
 
 @task
