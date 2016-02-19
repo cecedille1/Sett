@@ -8,7 +8,8 @@ import traceback
 import threading
 
 from sett import optional_import, defaults, ROOT
-from paver.easy import task, info, debug, consume_args, call_task, path, error
+from sett.utils.dispatch import Dispatcher
+from paver.easy import task, info, debug, consume_args, path, error
 from paver.deps.six import string_types, moves
 
 observers = optional_import('watchdog.observers')
@@ -20,6 +21,28 @@ libsass = optional_import('sass', 'libsass')
 DEBOUNCE_WAIT = 0.250
 
 
+class SassDispatcher(Dispatcher):
+    def __init__(self):
+        self._sass = Sass.default()
+
+    @Dispatcher.auto
+    @Dispatcher.on('watch', -1)
+    def compile(self):
+        """Launches the compilation of all sass files"""
+        debug('Building all files with %s', self._sass)
+        self._sass()
+
+    def watch(self):
+        """Watches the sass source directories and launches compilation as needed"""
+        debug('Building/watching with %s', self._sass)
+        try:
+            watcher = Watcher(self._sass)
+            info('Starting watch %s', self._sass)
+            watcher()
+        except KeyboardInterrupt:
+            pass
+
+
 @task
 @consume_args
 def sass(args):
@@ -28,40 +51,22 @@ def sass(args):
 
     Shortcut to sassc_watch and sassc_compile.
     """
-    if not args:
-        command = 'compile'
-    else:
-        command = args[0]
-
-    if command == 'compile':
-        call_task('sassc_compile')
-    elif command == 'watch':
-        call_task('sassc_watch')
-    else:
-        raise ValueError('Usage: sass [compile|watch]')
+    sd = SassDispatcher()
+    sd(*args)
 
 
 @task
 def sassc_compile(ROOT):
     """Compile the sass files"""
-    s = Sass.default()
-    debug('Building with %s', s)
-    s()
+    sd = SassDispatcher()
+    sd.compile()
 
 
 @task
 def sassc_watch():
     """Watch the filesystem for modifications and run sass if needed"""
-    s = Sass.default()
-    debug('Building/watching with %s', s)
-    s()
-
-    try:
-        watcher = Watcher(s)
-        info('Starting watch %s', s)
-        watcher()
-    except KeyboardInterrupt:
-        pass
+    sd = SassDispatcher()
+    sd.watch()
 
 
 class EventDispatcher(object):
