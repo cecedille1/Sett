@@ -134,38 +134,38 @@ class MetaDispatcher(type):
         """
         Creates a function that calls each of the function in args
         """
+        fns = [fn for x, y, fn in args]
+
         def fn(self):
-            for x, y, fn in args:
+            for fn in fns:
                 fn(self)
+
         return fn
 
-    def list(self):
-        """
-        Lists all defined function in this class.
-        """
-        return [fn
-                for name, fn in self.__dict__.items()
-                if not name.startswith('_') and
-                callable(fn) and
-                not isinstance(fn, classmethod)
-                ]
+    def _list(self):
+        all_methods = {}
+        for base in reversed(self.__mro__):
+            if issubclass(type(base), type(self)):
+                all_methods.update(
+                    (name, fn)
+                    for name, fn in base.__dict__.items()
+                    if not name.startswith('_') and
+                    callable(fn) and
+                    not isinstance(fn, classmethod)
+                )
+        return all_methods.items()
 
     def commands(self):
-        return {fn.__name__: fn.__doc__ or fn.__name__ for fn in self.list()}
+        """
+        Lists all dispatchable methods available in this dispatcher class
+        """
+        return {name: fn.__doc__ or fn.__name__ for name, fn in self._list()}
 
 
-class Dispatcher(with_metaclass(MetaDispatcher)):
+class BaseDispatcher(with_metaclass(MetaDispatcher)):
     """
-    The base Dispatcher class.
-
-    When called, instances of dispatcher dispatch the argument amongst the
-    defined methods. If not method exists, it calls ``default`` with the name
-    of the asked method.
-
-    When called without any argument, it calls the method(s) decorated by
-    Dispatcher.auto or named *auto*.
+    BaseDispatcher does not implements auto and default
     """
-    ignored_methods = {'auto', 'default'}
 
     def on(command, priority=1):
         """
@@ -183,6 +183,8 @@ class Dispatcher(with_metaclass(MetaDispatcher)):
     auto = staticmethod(on('auto'))
     on = staticmethod(on)
 
+    ignored_methods = {'auto', 'default'}
+
     @classmethod
     def usage(cls):
         """
@@ -198,6 +200,23 @@ class Dispatcher(with_metaclass(MetaDispatcher)):
             command_doc='\n'.join('\t- {}: {}'.format(k, commands[k]) for k in command_names)
         )
 
+    def __call__(self, command):
+        assert command not in self.ignored_methods or not command.startswith('_'), 'Cannot call private methods'
+        cmd = getattr(self, command)
+        cmd()
+
+
+class Dispatcher(BaseDispatcher):
+    """
+    The base Dispatcher class.
+
+    When called, instances of dispatcher dispatch the argument amongst the
+    defined methods. If not method exists, it calls ``default`` with the name
+    of the asked method.
+
+    When called without any argument, it calls the method(s) decorated by
+    Dispatcher.auto or named *auto*.
+    """
     def help(self):
         """
         Prints the usage
@@ -211,9 +230,8 @@ class Dispatcher(with_metaclass(MetaDispatcher)):
         ))
 
     def __call__(self, command=None):
-        assert not command.startswith('_'), 'Cannot call private methods'
-        assert command is None or command not in self.ignored_methods
-        if command is None:
-            command = 'auto'
-        cmd = getattr(self, command, None) or functools.partial(self.default, command)
-        cmd()
+        assert command is None or command != 'auto'
+        command = command or 'auto'
+        if not hasattr(self, command):
+            return self.default(command)
+        return super(Dispatcher, self).__call__(command)

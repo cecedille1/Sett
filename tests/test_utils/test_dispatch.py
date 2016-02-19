@@ -7,7 +7,7 @@ try:
 except ImportError:
     import mock
 
-from sett.utils.dispatch import Dispatcher
+from sett.utils.dispatch import Dispatcher, BaseDispatcher
 
 
 class TestDispatcher(unittest.TestCase):
@@ -19,6 +19,31 @@ class TestDispatcher(unittest.TestCase):
 
         d = MyDispatcher()
         self.assertEqual(d.usage(), 'MyDispatcher [help]\n\t- help: help and stuff')
+
+    def test_dispatcher_inheritance(self):
+        class ParentDispatcher(BaseDispatcher):
+            def a(self):
+                'parent'
+                pass
+
+            def b(self):
+                'parent'
+                pass
+
+        class ChildDispatcher(ParentDispatcher):
+            def b(self):
+                'child'
+                pass
+
+            def c(self):
+                'child'
+                pass
+
+        self.assertEqual(ChildDispatcher.commands(), {
+            'a': 'parent',
+            'b': 'child',
+            'c': 'child',
+        })
 
     def test_call_auto_decorator(self):
         m = mock.Mock()
