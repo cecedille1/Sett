@@ -56,7 +56,7 @@ def sass(args):
 
 
 @task
-def sassc_compile(ROOT):
+def sassc_compile():
     """Compile the sass files"""
     sd = SassDispatcher()
     sd.compile()
