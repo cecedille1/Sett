@@ -7,8 +7,7 @@ import time
 import subprocess
 import collections
 
-from paver.easy import path, info, consume_nargs, task, debug
-
+from paver.easy import path, info, consume_nargs, task, debug, error
 from paver.shell import _shlex_quote
 
 from sett import ROOT
@@ -175,7 +174,7 @@ class Daemon(object):
 
     @property
     def pid_file(self):
-        return self._pid_file or RUN_DIR.joinpath(self.name + '.pid')
+        return self._pid_file or ROOT.joinpath('var/pid/', self.name + '.pid')
 
     def __str__(self):
         return self.name
@@ -260,6 +259,7 @@ class Daemon(object):
             os.kill(pid, signal.SIGKILL)
         except OSError:
             info('%s was not running', self.name)
+            self._set_pid(None)
             return
 
         for x in range(5, 11):
@@ -272,6 +272,8 @@ class Daemon(object):
             info('Program %s did not respond to SIGKILL, sending SIGTERM', pid)
             os.kill(pid, signal.SIGTERM)
 
+        self._set_pid(None)
+
     def _get_pid(self):
         try:
             with open(self.pid_file, 'r') as pid_file:
@@ -280,10 +282,11 @@ class Daemon(object):
             return
 
     def _set_pid(self, pid):
-        with open(self.pid_file, 'w') as pid_file:
-            pid_file.write(str(pid))
-
-    def call(self, method):
-        assert method in ('start', 'stop', 'restart', 'run')
-        method = getattr(self, method)
-        return method()
+        if pid is None:
+            try:
+                os.unlink(self.pid_file)
+            except OSError as e:
+                error('Cannot remove pid file %s: %s', self.pid_file, e)
+        else:
+            with open(self.pid_file, 'w') as pid_file:
+                pid_file.write(str(pid))
