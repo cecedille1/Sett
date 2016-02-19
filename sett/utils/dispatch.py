@@ -62,14 +62,15 @@ class MetaDispatcher(type):
 
 
 class Dispatcher(with_metaclass(MetaDispatcher)):
-
-    @staticmethod
     def on(command, priority=1):
         def decorator(fn):
             assert priority != 0
             fn.__dict__.setdefault('callbacks', []).append((command, priority))
             return fn
         return decorator
+
+    auto = staticmethod(on('auto'))
+    on = staticmethod(on)
 
     @classmethod
     def usage(cls):

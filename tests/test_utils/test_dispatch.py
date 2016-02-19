@@ -20,6 +20,30 @@ class TestDispatcher(unittest.TestCase):
         d = MyDispatcher()
         self.assertEqual(d.usage(), 'MyDispatcher [help]\n\t- help: help and stuff')
 
+    def test_call_auto_decorator(self):
+        m = mock.Mock()
+
+        class MyDispatcher(Dispatcher):
+            @Dispatcher.auto
+            def foobar(self):
+                m.foobar()
+
+        d = MyDispatcher()
+        d()
+        m.foobar.assert_called_once_with()
+
+    def test_call_auto_on(self):
+        m = mock.Mock()
+
+        class MyDispatcher(Dispatcher):
+            @Dispatcher.on('auto')
+            def foobar(self):
+                m.foobar()
+
+        d = MyDispatcher()
+        d()
+        m.foobar.assert_called_once_with()
+
     def test_call_auto(self):
         m = mock.Mock()
 
