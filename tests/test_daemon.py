@@ -16,48 +16,6 @@ from sett.daemon import (
 )
 
 
-class TestCtlTask(unittest.TestCase):
-    def setUp(self):
-        self.daemons = mock.MagicMock(spec=Daemons)
-        self.daemons.__getitem__.return_value = mock.MagicMock(spec=DaemonGroup)
-
-        def ctl():
-            return self.daemons
-        self.ctl = ctl_task(ctl)
-
-    def _call(self, args):
-        environment.args = args
-        self.ctl()
-
-    def test_start(self):
-        self._call(['start', 'abc'])
-        self.daemons.__getitem__.assert_has_calls([
-            mock.call('abc'),
-            mock.call().call('start'),
-        ])
-
-    def test_stop(self):
-        self._call(['stop', 'abc'])
-        self.daemons.__getitem__.assert_has_calls([
-            mock.call('abc'),
-            mock.call().call('stop'),
-        ])
-
-    def test_statuts(self):
-        self.daemons.__getitem__.return_value.__iter__.return_value = [
-            mock.Mock(spec=Daemon),
-            mock.Mock(spec=Daemon),
-        ]
-
-        with mock.patch('sett.daemon.info') as info:
-            self._call(['status', 'abc'])
-
-        self.daemons.__getitem__.assert_has_calls([
-            mock.call('abc'),
-        ])
-        self.assertEqual(info.call_count, 2)
-
-
 class TestDaemons(unittest.TestCase):
     @classmethod
     def setUpClass(self):

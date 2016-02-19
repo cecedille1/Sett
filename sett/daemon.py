@@ -2,6 +2,7 @@
 
 import os
 import functools
+import sys
 import signal
 import time
 import subprocess
@@ -10,6 +11,7 @@ import collections
 from paver.easy import path, info, consume_nargs, task, debug, error
 from paver.shell import _shlex_quote
 
+from sett.utils.dispatch import Dispatcher
 from sett import ROOT
 
 
@@ -17,7 +19,29 @@ def shlex_quote(args):
     return ' '.join(_shlex_quote(quoted) for quoted in args)
 
 
-RUN_DIR = ROOT.joinpath('var/pid/')
+class DaemonDispatcher(Dispatcher):
+    def __init__(self, daemon):
+        self.daemon = daemon
+
+    def run(self):
+        self.daemon.run()
+
+    @Dispatcher.on('restart', 1)
+    def start(self):
+        self.daemon.start()
+
+    @Dispatcher.on('restart', -1)
+    def stop(self):
+        self.daemon.stop()
+
+    def status(self):
+        sys.stdout.write('{}\n'.format(self.daemon.status()))
+
+
+class DaemonsDispatcher(DaemonDispatcher):
+    def status(self):
+        for daemon in self.daemon:
+            sys.stdout.write('* {:40}: {}\n'.format(str(daemon), daemon.status()))
 
 
 def ctl_task(fn):
@@ -29,17 +53,9 @@ def ctl_task(fn):
     @consume_nargs(2)
     @functools.wraps(fn)
     def ctl(args):
-
         arg, service = args
-        daemons_group = daemons[service]
-        if arg in ('start', 'stop', 'restart'):
-            daemons_group.call(arg)
-        elif arg == 'status':
-            for daemon in daemons_group:
-                info('* {:40}: {}'.format(str(daemon), daemon.status()))
-        else:
-            info('Bad task: %s', arg)
-
+        dd = DaemonsDispatcher(daemons[service])
+        dd(arg)
     return ctl
 
 
@@ -52,12 +68,8 @@ def daemon_task(fn):
     @consume_nargs(1)
     @functools.wraps(fn)
     def daemon_ctl(args):
-        command, = args
-        if command == 'status':
-            info(daemon.status())
-            return
-
-        daemon.call(command)
+        dd = DaemonDispatcher(daemon)
+        dd(*args)
 
     return daemon_ctl
 
@@ -94,17 +106,8 @@ class DaemonGroup(object):
         for d in self:
             d.stop()
 
-    def restart(self):
-        self.stop()
-        self.start()
-
     def status(self):
         return [d.status() for d in self]
-
-    def call(self, method):
-        assert method in ('start', 'stop', 'restart', 'status')
-        method = getattr(self, method)
-        return method()
 
 
 class Daemons(object):
@@ -203,10 +206,6 @@ class Daemon(object):
         else:
             return 'Running with pid {}'.format(pid)
 
-    def restart(self):
-        self.stop()
-        self.start()
-
     def start(self):
         info('Starting %s', self)
         pid_dir = path(self.pid_file).dirname()
@@ -236,7 +235,7 @@ class Daemon(object):
         return self.cmd
 
     def run(self):
-        return self._run(self.get_command())
+        return self._run(self.get_command()).wait()
 
     def _run(self, command):
         if self.env:
