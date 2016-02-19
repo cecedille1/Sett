@@ -44,6 +44,18 @@ def nginx_conf():
 
 
 @task
+def systemd_conf():
+    """
+    Generates etc/systemd.conf
+    """
+    render_template(defaults.SYSTEMD_TEMPLATE, 'etc/systemd.service', {
+        'systemd': {
+            'KillSignal': None,
+        }
+    })
+
+
+@task
 def monit_conf():
     """
     Generates etc/monit.conf

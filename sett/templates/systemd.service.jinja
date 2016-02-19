@@ -1,0 +1,15 @@
+
+[Unit]
+Description=Application Daemon for {{ NAME }}
+After=network.target
+
+[Service]
+ExecStart={{ctl}} run
+{% if systemd.KillSignal %}
+KillSignal={{systemd.KillSignal}}
+{% endif %}
+User={{UID}}
+Group={{GID}}
+
+[Install]
+WantedBy=multi-user.target

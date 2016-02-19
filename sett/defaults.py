@@ -98,6 +98,7 @@ DEPLOY_TEMPLATES_DIR = 'sett-templates'
 DOMAIN_TEMPLATE = 'dev.{name}.emencia.net'
 NGINX_TEMPLATE = 'nginx.conf.jinja'
 MONIT_TEMPLATE = 'monit.conf.jinja'
+SYSTEMD_TEMPLATE = 'systemd.service.jinja'
 
 
 """
