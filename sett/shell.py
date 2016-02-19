@@ -103,9 +103,9 @@ class Success(collections.namedtuple('Success', ['line', 'additions', 'changes']
     @text_repr
     def __str__(self):
         buff = [text_type(self.line)]
-        for k, v in self.additions.items():
+        for k, v in sorted(self.additions.items()):
             buff.append(u'    {}: {}'.format(k, v))
-        for k, (v1, v2) in self.changes.items():
+        for k, (v1, v2) in sorted(self.changes.items()):
             buff.append(u'    {}: {} -> {}'.format(k, v1, v2))
         return u'\n'.join(buff)
 
