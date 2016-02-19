@@ -102,14 +102,14 @@ class MetaDispatcher(type):
     def __new__(self, name, bases, attrs):
         callbacks = self._collect(attrs)
         for command_name, callback_list in callbacks.items():
-            callback_list = sorted(callback_list)
             super_fn = attrs.get(command_name)
             assert super_fn is None or callable(super_fn)
 
             if super_fn:
                 heapq.heappush(callback_list, (0, 0, attrs[command_name]))
 
-            fn = self._fn_factory(sorted(callback_list))
+            callback_list = sorted(callback_list)
+            fn = self._fn_factory(callback_list)
             if super_fn:
                 fn = functools.wraps(super_fn)(fn)
             else:
@@ -126,7 +126,7 @@ class MetaDispatcher(type):
             if isinstance(attr, types.FunctionType):
                 events = attr.__dict__.pop('callbacks', [])
                 for command, priority in events:
-                    heapq.heappush(callbacks[command], (priority, -next(counter), attr))
+                    heapq.heappush(callbacks[command], (priority, next(counter), attr))
         return callbacks
 
     @classmethod
