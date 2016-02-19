@@ -20,6 +20,17 @@ class TestDispatcher(unittest.TestCase):
         d = MyDispatcher()
         self.assertEqual(d.usage(), 'MyDispatcher [help]\n\t- help: help and stuff')
 
+    def test_call_auto(self):
+        m = mock.Mock()
+
+        class MyDispatcher(Dispatcher):
+            def auto(self):
+                m.auto()
+
+        d = MyDispatcher()
+        d()
+        m.auto.assert_called_once_with()
+
     def test_call(self):
         m = mock.Mock()
 

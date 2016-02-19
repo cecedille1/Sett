@@ -90,7 +90,7 @@ class Dispatcher(with_metaclass(MetaDispatcher)):
             name, self.usage(),
         ))
 
-    def __call__(self, command):
+    def __call__(self, command='auto'):
         assert not command.startswith('_'), 'Cannot call private methods'
         cmd = getattr(self, command, None) or functools.partial(self.default, command)
         cmd()
