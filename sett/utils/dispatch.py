@@ -126,7 +126,7 @@ class MetaDispatcher(type):
             if isinstance(attr, types.FunctionType):
                 events = attr.__dict__.pop('callbacks', [])
                 for command, priority in events:
-                    heapq.heappush(callbacks[command], (priority, next(counter), attr))
+                    heapq.heappush(callbacks[command], (priority, -next(counter), attr))
         return callbacks
 
     @classmethod
