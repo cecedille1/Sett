@@ -47,6 +47,14 @@ def pip(args):
     """Run a pip command"""
     if not args:
         args = ['freeze']
+    elif args[0] == 'freeze' and len(args) > 1:
+        out = sh([which.pip, 'freeze'], capture=True)
+        keys = tuple(l.lower() for l in args[1:])
+        for line in out.split():
+            if line.lower().startswith(keys):
+                sys.stdout.write(line)
+                sys.stdout.write('\n')
+        return
     elif args[0] == 'install':
         if defaults.PYPI_PACKAGE_INDEX:
             extra = ['--index-url', defaults.PYPI_PACKAGE_INDEX]
