@@ -45,7 +45,9 @@ installed_packages = InstalledPackages()
 @consume_args
 def pip(args):
     """Run a pip command"""
-    if args[0] == 'install':
+    if not args:
+        args = ['freeze']
+    elif args[0] == 'install':
         if defaults.PYPI_PACKAGE_INDEX:
             extra = ['--index-url', defaults.PYPI_PACKAGE_INDEX]
             if defaults.PYPI_PACKAGE_INDEX_IGNORE_SSL:
