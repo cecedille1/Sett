@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import threading
+import collections
 try:
     import Queue as queue
 except ImportError:
@@ -76,7 +77,7 @@ class Threaded(object):
                     debug('%s: Got a task', n)
                     self._fn(*args, **kw)
                 except Exception as e:
-                    self.failed_tasks.append((args, kw, e))
+                    self.failed_tasks.append(Failure(args, kw, e))
                 finally:
                     debug('%s: Finishing a task', n)
                     self._queue.task_done()
@@ -109,5 +110,17 @@ class Threaded(object):
 
         self.status = Threaded.ENDED
         if self.failed_tasks:
-            raise RuntimeError('Those tasks failed: {}'.format(self.failed_tasks))
+            raise RuntimeError('Those tasks failed: {}'.format(
+                '\n--\n'.join('{}{!r}'.format(self._fn, ft) for ft in self.failed_tasks)
+            ))
         return True
+
+
+class Failure(collections.namedtuple('_Failure', ['args', 'kw', 'e'])):
+    def __repr__(self):
+        return '({args}{comma}{kwargs})\n => {e.__class__.__name__}({e})'.format(
+            comma=',' if self.args and self.kw else '',
+            args=', '.join(repr(a) for a in self.args),
+            kwargs=', '.join('{}={!r}'.format(k, v) for k, v in self.kw.items()),
+            e=self.e
+        )

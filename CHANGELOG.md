@@ -7,6 +7,7 @@
   the args
 - Nicer debug output in rjs task
 - Reworked rjs task, with more options and easier customization
+- Nicer failure notifications when exceptions happen in a @parallel function
 
 
 
