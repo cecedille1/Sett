@@ -5,6 +5,9 @@
 - pip without args defaults to pip freeze
 - pip freeze with args will filter output of pip freeze to the row matching one
   the args
+- Nicer debug output in rjs task
+- Reworked rjs task, with more options and easier customization
+
 
 
 ## 0.10.4 (2016-02-22)

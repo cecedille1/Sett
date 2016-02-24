@@ -1,17 +1,61 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Requirejs javascript builder
+============================
+
+Scenario
+--------
+
+Requirejs builds javascript files. The implented scenario needs those files
+under the static root. The static root is built by *virtual_static*. By default
+it's django collectstatic command that does it.
+
+js
+├── config.js
+└── app
+    └── application.js
+
+There is a bootstrap JS file, not shown in this path that loads requirejs,
+config, then app/application. Config.js defines the path to aldmond relative to
+the baseUrl.
+
+Build step
+----------
+
+When invoked, **rjs** will create a temp dir, call *virtual_static* on it and
+instanciate a RJSBuilder. The RJSBuilder will either get a list of apps to
+build or will have to autodiscover it. If it exists, it will check againt a
+.files that contains the files that have been used to build the previous
+version for update since the last build. When no such update have been found,
+it will skip the build.
+
+The RJSBuilder takes a *defaults* dict. This options customize the building of
+the module and the arguments passed to r.js Those options may be intercepted by
+RJSBuilder or RJSBuild, for instance *appdir* sets the directory in which the
+autodiscovery takes place.  Else the list of options is passed to rjs.
+
+The options can be given by setting the `rjs_defaults` keyword of ``call_task``
+or with ``-o``in the CLI.
+
+>>> call_task('rjs', options={'rjs_defaults': {'preserveLicenseComments': 'false'}})
+
+    $ paver rjs -o preserveLicenseComments=false
+"""
+
 from __future__ import absolute_import
 
 import os
 import subprocess
+import optparse
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
-                        info, needs, path, debug, error, sh)
+                        info, needs, path, debug, error, sh, cmdopts)
 from paver.deps.six import text_type, string_types
 
 from sett import ROOT, which, defaults, parallel
-from sett.utils import Tempdir
+from sett.utils import Tempdir, import_string
 from sett.npm import NODE_MODULES
 
 
@@ -137,10 +181,7 @@ class AlmondRJSBuild(RJSBuild):
             include=self.name,
             insertRequire=self.name,
         )
-        return super(AppRJSBuild, self).get_command(**kw)
-
-
-AppRJSBuild = AlmondRJSBuild
+        return super(AlmondRJSBuild, self).get_command(**kw)
 
 
 class FilesListComparator(object):
@@ -266,44 +307,84 @@ class RJSBuilder(object):
 
 
 @task
-@consume_args
-def rjs(args):
-    """Usage: rjs APP [APP...]
-Compile a requirejs app.
+@cmdopts([
+    optparse.make_option(
+        '-B', '--builder',
+        nargs=1,
+        default='sett.requirejs.RJSBuilder',
+    ),
+    optparse.make_option(
+        '-C', '--build-class',
+        nargs=1,
+        default='sett.requirejs.AlmondRJSBuild',
+    ),
+    optparse.make_option(
+        '-f', '--force',
+        action='store_true',
+        default=False,
+    ),
+    optparse.make_option(
+        '-p', '--path',
+        dest='paths',
+        action='append',
+        default=[],
+    ),
+    optparse.make_option(
+        '-o', '--option',
+        dest='rjs_defaults',
+        action='append',
+        default=[],
+    ),
+])
+def rjs(options):
+    """Usage: rjs [-f|--force] [-B|--builder builder_class_path]  [-p APP] [-p APP...]
+Build a requirejs app.
 
-rjs requires npm apps almond and requirejs.
-For an app `x`: the url `/STATIC_ROOT/js/x.js` points to a JS file that loads a
-bootstrap. It requires `/STATIC_ROOT/js/config.js` and
-`/STATIC_ROOT/js/app/x.js`. The rjs optimizer will optimize app/x and write the
-output in `OUTPUT/x.js`.
+Rjs will call the virtual_static class (the default implementation is
+sett.requirejs.virtual_static). This task should copy or link in the temp dir
+given as the first arg all the static files required for the compilation as if
+it was the static root.
 
-OUTPUT is the value of ``defaults.RJS_BUILD_DIR`` and defaults to
-``ROOT/build/static/js/``.
+Rjs requires npm apps requirejs. It will instanciate a builder class from the
+class loaded from builder_class_path (sett.requirejs.RJSBuilder by default) and
+launch a build either only of the apps given by the -p flag in the command line
+or all autodiscovered apps when no -p is given.
 
-If the django settings have a value STATICFILES_DIRS_DEV, it will be appended
-to the STATICFILES_DIRS setting before loading files.
-    """
-    force = '--force' in args
-    if force:
-        args.remove('--force')
-
-    if args and isinstance(args[0], type):
-        cls = args.pop(0)
+The built files will be created in default.RJS_BUILD_DIR (build/static/js).
+Default behavior of rjs is to build autonomous files that contains almond and all
+their namespace. This behavior can be configured in a new builder class.
+"""
+    if isinstance(options.builder, string_types):
+        cls = import_string(options.builder)
+    elif callable(options.builder):
+        cls = options.builder
     else:
-        cls = RJSBuilder
+        raise TypeError('Invalid builder: {}'.format(options.builder))
+
+    if isinstance(options.builder_class, string_types):
+        build_class = import_string(options.build_class)
+    elif callable(options.build_class):
+        build_class = options.build_class
+    else:
+        raise TypeError('Invalid build class: {}'.format(options.builder))
 
     outdir = ROOT.joinpath(defaults.RJS_BUILD_DIR)
     outdir.makedirs()
 
+    rjs_defaults = (options.rjs_defaults
+                    if isinstance(options.rjs_defaults, dict) else
+                    [x.split('=') for x in options.rjs_defaults])
+
     buidler = cls(
-        defaults.RJS_APP_DIR,
-        force=force,
+        force=options.force,
         outdir=outdir,
+        build_class=build_class,
+        defaults=rjs_defaults,
     )
 
     with Tempdir() as tempdir:
         call_task('virtual_static', args=[tempdir])
-        buidler(tempdir.joinpath('js'), args)
+        buidler(tempdir.joinpath('js'), options.paths)
 
 
 @task
