@@ -9,7 +9,12 @@ try:
 except ImportError:
     import mock
 
-from sett.requirejs import RJSBuilder, RJSBuild, FilesListComparator
+from sett.requirejs import (
+    RJSBuilder,
+    RJSBuild,
+    FilesListComparator,
+    AlmondRJSBuild,
+)
 from paver.path import path
 
 
@@ -46,6 +51,29 @@ class TestRJSBuilder(unittest.TestCase):
         rjsb(self.FS, [])
         BC.assert_called_once_with('app/app', self.FS, ('/abc/def/app/app.js'), mock.ANY, mock.ANY)
         self.parallel.for_each.assert_called_once_with([BC.return_value])
+
+
+class TestAlmondRJSBuild(unittest.TestCase):
+    def test_almond_set(self):
+        arjsb = AlmondRJSBuild('app/app', '/abc/def', '/ghi/out.js', {'abcd': 'efgh'}, mock.Mock())
+        with mock.patch('sett.requirejs.which'):
+            command = arjsb.get_command(almond='aldmond_path')
+        self.assertEqual(set(command[3:]), {
+            'name=aldmond_path',
+            'include=app/app',
+            'insertRequire=app/app',
+        })
+
+    def test_almond_unset(self):
+        arjsb = AlmondRJSBuild('app/app', '/abc/def', '/ghi/out.js', {'abcd': 'efgh'}, mock.Mock())
+        with mock.patch('sett.requirejs.which'):
+            with mock.patch('sett.requirejs.NODE_MODULES', path('/abc/node_modules')):
+                command = arjsb.get_command()
+            self.assertEqual(set(command[3:]), {
+                'include=app/app',
+                'name=../node_modules/almond/almond',
+                'insertRequire=app/app',
+            })
 
 
 class TestRJSBuild(unittest.TestCase):

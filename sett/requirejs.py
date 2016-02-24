@@ -133,7 +133,7 @@ class AlmondRJSBuild(RJSBuild):
 
     def get_command(self, **kw):
         kw.update(
-            name=self.defaults.get('almond') or self.get_almond_path(),
+            name=kw.pop('almond', None) or self.get_almond_path(),
             include=self.name,
             insertRequire=self.name,
         )
