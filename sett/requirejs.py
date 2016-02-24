@@ -79,6 +79,11 @@ class RJSBuild(object):
         self.defaults = defaults
         self.cache = cache
 
+    def __repr__(self):
+        return '{self.__class__.__name__}({self.name}: {self.source}->{self.out})'.format(
+            self=self,
+        )
+
     @property
     def config_js(self):
         """
@@ -306,17 +311,26 @@ class RJSBuilder(object):
         builder.for_each(build_list)
 
 
+def _cls(options, key, default):
+    if not options.get(key):
+        return default
+    if isinstance(options.build_class, string_types):
+        return import_string(options.build_class)
+    if callable(options.build_class):
+        return options.build_class
+
+    raise TypeError('Invalid {} class: {}'.format(key, options.get(key)))
+
+
 @task
 @cmdopts([
     optparse.make_option(
         '-B', '--builder',
-        nargs=1,
-        default='sett.requirejs.RJSBuilder',
+        dest='builder',
     ),
     optparse.make_option(
         '-C', '--build-class',
-        nargs=1,
-        default='sett.requirejs.AlmondRJSBuild',
+        dest='build_class',
     ),
     optparse.make_option(
         '-f', '--force',
@@ -354,37 +368,27 @@ The built files will be created in default.RJS_BUILD_DIR (build/static/js).
 Default behavior of rjs is to build autonomous files that contains almond and all
 their namespace. This behavior can be configured in a new builder class.
 """
-    if isinstance(options.builder, string_types):
-        cls = import_string(options.builder)
-    elif callable(options.builder):
-        cls = options.builder
-    else:
-        raise TypeError('Invalid builder: {}'.format(options.builder))
-
-    if isinstance(options.builder_class, string_types):
-        build_class = import_string(options.build_class)
-    elif callable(options.build_class):
-        build_class = options.build_class
-    else:
-        raise TypeError('Invalid build class: {}'.format(options.builder))
-
     outdir = ROOT.joinpath(defaults.RJS_BUILD_DIR)
     outdir.makedirs()
 
-    rjs_defaults = (options.rjs_defaults
-                    if isinstance(options.rjs_defaults, dict) else
-                    [x.split('=') for x in options.rjs_defaults])
+    rjs_defaults = getattr(options, 'rjs_defaults', {})
+    if not isinstance(options.rjs_defaults, dict):
+        rjs_defaults = dict(x.split('=') for x in rjs_defaults)
 
-    buidler = cls(
-        force=options.force,
+    Builder = _cls(options, 'builder', RJSBuilder)
+    BuildClass = _cls(options, 'build_class', AlmondRJSBuild)
+
+    debug('Launching %s (%s)', Builder.__name__, BuildClass.__name__)
+    buidler = Builder(
+        force=options.get('force', False),
         outdir=outdir,
-        build_class=build_class,
+        build_class=BuildClass,
         defaults=rjs_defaults,
     )
 
     with Tempdir() as tempdir:
         call_task('virtual_static', args=[tempdir])
-        buidler(tempdir.joinpath('js'), options.paths)
+        buidler(tempdir.joinpath('js'), options.get('paths', []))
 
 
 @task
