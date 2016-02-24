@@ -1,5 +1,8 @@
 ## Unreleased
 
+
+## 0.11.0 (2016-02-24)
+
 ### Feature
 
 - pip without args defaults to pip freeze
