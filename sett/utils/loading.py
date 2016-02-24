@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import importlib
+
 from paver.easy import debug
+
+
+def import_string(value_path):
+    module_path, attribute = value_path.rsplit('.', 1)
+    try:
+        module = importlib.import_module(module_path)
+    except ImportError:
+        raise ValueError('Cannot import module {}'.format(module))
+
+    try:
+        return getattr(module, attribute)
+    except AttributeError:
+        raise ValueError('Cannot import {} from module {}'.format(attribute, module))
 
 
 def optional_import(module_name, package_name=None):
