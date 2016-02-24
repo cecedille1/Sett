@@ -199,17 +199,10 @@ class RJSBuilder(object):
     """
     A builder for a set of r.js modules.
 
-    It takes a the name *appdir* which contains the files to build from the
-    static env.
-
-    >>> rjsb = RJSBuilder('app', ROOT.joinpath('build/js'))
-
-    When called it will autodiscover apps or filter the one given in args and
-    build them each if necessary (``RJSBuild.should_build``).
+    >>> rjsb = RJSBuilder(ROOT.joinpath('build/js'))
     """
 
-    def __init__(self, appdir, outdir, force=False, build_class=AppRJSBuild, defaults=()):
-        self.appdir = path(appdir)
+    def __init__(self, outdir, force=False, build_class=AlmondRJSBuild, defaults=()):
         self.outdir = outdir
         self.force = force
         self.build_class = build_class
@@ -231,15 +224,16 @@ class RJSBuilder(object):
         if self.force or rjs_build.should_build():
             rjs_build.build()
 
-    def autodiscover(self, tempdir):
+    def autodiscover(self, tempdir, appdir):
         """
         Tries to find under *appdir* in the *tempdir* all the ``js`` files and
         returns the matching requirejs module names.
         """
         args = []
-        info('Auto discovering JS %s', self.appdir)
-        for dir in path(tempdir).walkdirs(self.appdir):
-            args.extend(text_type(self.appdir.joinpath(x.namebase)) for x in dir.files('*.js'))
+        info('Auto discovering JS %s', appdir)
+        appdir = path(appdir)
+        for dir in path(tempdir).walkdirs(appdir):
+            args.extend(text_type(appdir.joinpath(x.namebase)) for x in dir.files('*.js'))
         debug('Autodicovered: %s', args)
         return args
 
@@ -247,23 +241,19 @@ class RJSBuilder(object):
         """
         Returns a list of  ``RJSBuild`` instances for the given modules.
         """
+        defaults = dict(self.defaults)
+        defaults.pop('appdir', None)
+
         for name in args:
             out = ROOT.joinpath(self.outdir, name + '.js')
             cache = FilesListComparator(out)
-            yield self.build_class(name, source, out, self.defaults, cache)
-
-    def filter(self, args):
-        """
-        Filters the args to match only those under the *appdir*.
-        """
-        return [arg for arg in args if arg.startswith(self.appdir)]
+            yield self.build_class(name, source, out, defaults, cache)
 
     def __call__(self, tempdir, args):
         if not args:
             # Auto discover
-            args = self.autodiscover(tempdir)
+            args = self.autodiscover(tempdir, self.defaults.get('appdir', 'app'))
         else:
-            args = self.filter(args)
             debug('Filtered args: %s', args)
 
         if not args:

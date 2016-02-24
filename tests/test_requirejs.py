@@ -35,19 +35,19 @@ class TestRJSBuilder(unittest.TestCase):
         self.patch_parallel.stop()
 
     def test_autodiscover(self):
-        rjsb = RJSBuilder('app', '/abc/def')
-        self.assertEqual(rjsb.autodiscover(self.FS), ['app/app'])
+        rjsb = RJSBuilder('/abc/def')
+        self.assertEqual(rjsb.autodiscover(self.FS, 'app'), ['app/app'])
 
     def test_call_with_args(self):
         BC = mock.Mock(name='RJSBuild')
-        rjsb = RJSBuilder('app', '/abc/def', build_class=BC)
-        rjsb(self.FS, ['app/app', 'views/view'])
+        rjsb = RJSBuilder('/abc/def', build_class=BC)
+        rjsb(self.FS, ['app/app'])
         BC.assert_called_once_with('app/app', self.FS, ('/abc/def/app/app.js'), mock.ANY, mock.ANY)
         self.parallel.for_each.assert_called_once_with([BC.return_value])
 
     def test_call_without_args(self):
         BC = mock.Mock(name='RJSBuild')
-        rjsb = RJSBuilder('app', '/abc/def', build_class=BC)
+        rjsb = RJSBuilder('/abc/def', build_class=BC)
         rjsb(self.FS, [])
         BC.assert_called_once_with('app/app', self.FS, ('/abc/def/app/app.js'), mock.ANY, mock.ANY)
         self.parallel.for_each.assert_called_once_with([BC.return_value])
