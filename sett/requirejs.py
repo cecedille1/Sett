@@ -8,7 +8,7 @@ import subprocess
 
 from paver.easy import (task, no_help, consume_args, consume_nargs, call_task,
                         info, needs, path, debug, error, sh)
-from paver.deps.six import text_type
+from paver.deps.six import text_type, string_types
 
 from sett import ROOT, which, defaults, parallel
 from sett.utils import Tempdir
@@ -239,7 +239,7 @@ class RJSBuilder(object):
         args = []
         info('Auto discovering JS %s', self.appdir)
         for dir in path(tempdir).walkdirs(self.appdir):
-            args.extend(self.appdir.joinpath(x.namebase) for x in dir.files('*.js'))
+            args.extend(text_type(self.appdir.joinpath(x.namebase)) for x in dir.files('*.js'))
         debug('Autodicovered: %s', args)
         return args
 
