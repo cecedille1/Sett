@@ -353,3 +353,14 @@ def runserver():
     assert os.environ.get('DB_PORT_5432_TCP_ADDR')
     call_task('sett.django.runserver')
 ```
+
+
+### Test naming strategies
+
+Sett uses nosetest to run tests. It propose a way to guess the tests to run
+from a module, class, or method full dotted path. The auto filters are used to
+select the test to run and to filter the ouput of coverage.
+
+The naming strategy can be guessed or set in
+``defaults.TESTS_NAMING_STRATEGY``, either by a dotted python path string or by
+setting it to a callable directly.
