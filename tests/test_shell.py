@@ -8,6 +8,7 @@ try:
 except ImportError:
     import mock
 
+from paver.tasks import Environment
 from paver.easy import call_task, path
 from sett.shell import (
     Executor,
@@ -107,6 +108,7 @@ class TestExecutor(unittest.TestCase):
         self.assertEqual(res, [Failed(Line_.build.return_value, tb.format_exc())])
 
 
+@mock.patch('paver.tasks.environment', Environment(__import__('sett.shell')))
 class TestExecTask(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
