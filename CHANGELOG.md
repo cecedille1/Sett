@@ -1,5 +1,16 @@
 ## Unreleased
 
+## 0.11.1 (2016-03-01)
+
+###Features
+
+- Instructions can be piped to exec
+- Instructions starting with '/' or './' will be read from this file in exec
+- uwsgi configuration is written in yml if available
+
+### Refactoring
+
+- Test naming strategies
 
 ## 0.11.0 (2016-02-24)
 
