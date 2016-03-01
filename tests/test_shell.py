@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import io
+
 import unittest
 try:
     import unittest.mock as mock
 except ImportError:
     import mock
 
-
+from paver.easy import call_task, path
 from sett.shell import (
     Executor,
     Line,
@@ -67,7 +69,7 @@ class TestExecutor(unittest.TestCase):
         globals = mock.Mock()
 
         with mock.patch.multiple('sett.shell', Line=Line_, globals=globals):
-            x = Executor('instruction1')
+            x = Executor(['instruction1'])
 
         list(x())
         Line_.assert_has_calls([
@@ -89,7 +91,7 @@ class TestExecutor(unittest.TestCase):
 
         with mock.patch('sett.shell.Line', spec=Line) as Line_:
             Line_.build.side_effect = [L1, L2]
-            x = Executor('instruction1; instruction2')
+            x = Executor(['instruction1', 'instruction2'])
 
         res = list(x())
         self.assertEqual(res, ['l1', 'l2'])
@@ -97,9 +99,40 @@ class TestExecutor(unittest.TestCase):
     def test_exception(self):
         with mock.patch('sett.shell.Line', spec=Line) as Line_:
             Line_.build.return_value.side_effect = ValueError('OH SNAP')
-            x = Executor('instruction1')
+            x = Executor(['instruction1'])
 
         with mock.patch('sett.shell.traceback') as tb:
             res = list(x())
 
         self.assertEqual(res, [Failed(Line_.build.return_value, tb.format_exc())])
+
+
+class TestExecTask(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.patch_executor = mock.patch('sett.shell.Executor')
+
+    def setUp(self):
+        self.executor = self.patch_executor.start()
+
+    def tearDown(self):
+        self.patch_executor.stop()
+
+    def test_input_arg(self):
+        call_task('exec', args=['commands here'], options={'stop_at_exception': True})
+        self.executor.assert_called_once_with(['commands here'], stop_at_exception=True)
+
+    def test_input_stdin(self):
+        with mock.patch('sys.stdin', io.StringIO(u'commands here\n')):
+            call_task('exec', args=['-'], options={'stop_at_exception': True})
+        self.executor.assert_called_once_with(['commands here'], stop_at_exception=True)
+
+    def test_input_file_abs(self):
+        target = path(__file__).dirname().joinpath('test_shell_input').abspath()
+        call_task('exec', args=[target], options={'stop_at_exception': True})
+        self.executor.assert_called_once_with(['commands here'], stop_at_exception=True)
+
+    def test_input_file_rel(self):
+        target = './' + path(__file__).dirname().joinpath('test_shell_input').relpath()
+        call_task('exec', args=[target], options={'stop_at_exception': True})
+        self.executor.assert_called_once_with(['commands here'], stop_at_exception=True)

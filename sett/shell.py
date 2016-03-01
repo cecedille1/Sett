@@ -130,14 +130,11 @@ class Executor(object):
     a detailled version of the results of the operation.
     """
 
-    def __init__(self, code, stop_at_exception=True):
+    def __init__(self, statements, stop_at_exception=True):
         self._locals = {}
         self._globals = globals()
 
-        if not isinstance(code, text_type):
-            code = code.decode(sys.getfilesystemencoding())
-
-        self._code = [Line.build(line) for line in code.split(u';')]
+        self._code = [Line.build(line) for line in statements]
         self._continue = not stop_at_exception
 
     def __call__(self):
@@ -212,7 +209,40 @@ def exec_task(args, options):
     c
     >>> for x in "abc": print(x)
         x: c
+
+    Python statements can also be piped from the stdin or from a file. When the
+    command is only ``-``, then the standard input is read then executed. If
+    the instruction starts with ``/`` or ``./``, then this file is opened and
+    executed.
     """
-    x = Executor(args[0], stop_at_exception=options.stop_at_exception)
+    input, =  args
+
+    if input == '-':
+        statements = parse(sys.stdin.read())
+    elif input.startswith(('./', '/')):
+        with open(input, 'r') as input_file:
+            statements = parse(input_file.read())
+    else:
+        statements = parse(input)
+
+    x = Executor(statements, stop_at_exception=options.stop_at_exception)
     for r in x():
         sys.stdout.write(u'{}\n'.format(r))
+
+
+def parse(input):
+    if not isinstance(input, text_type):
+        input = input.decode(sys.getfilesystemencoding())
+    input = input.strip()
+    if '\n' not in input:
+        return input.split(u';')
+
+    all_lines = []
+    buffer = []
+    for line in input.split('\n'):
+        if buffer and not line.startswith((' ', '\t')):
+            all_lines.append(';'.join(buffer))
+            buffer.clear()
+        buffer.append(line)
+    all_lines.append(';'.join(buffer))
+    return all_lines
