@@ -117,9 +117,15 @@ def default_context():
 
     name = environment.options.setup.name.lower()
     return {
+        'NAME': name,
+        'domain': defaults.DOMAIN_TEMPLATE.format(name=name, env=environment)
+    }
+
+
+@DeployContext.register_default
+def running_env():
+    return {
         'UID': getpass.getuser(),
         'GID': grp.getgrgid(os.getgid()).gr_name,
         'ROOT': ROOT,
-        'NAME': name,
-        'domain': defaults.DOMAIN_TEMPLATE.format(name=name, env=environment)
     }
