@@ -70,6 +70,15 @@ SYSTEMD_TEMPLATE = 'systemd.service.jinja'
 """
 UWSGI_SOCKET_TYPE = 'unix'
 
+"""
+.. property:: UWSGI_OUTPUT_FORMAT
+
+    The format of the configuration file generated for uwsgi. Can be `None`,
+    xml or yml.  None will check if pyyaml is installed and use yml or default
+    to xml
+"""
+UWSGI_OUTPUT_FORMAT = None
+
 UWSGI_EXTRA = {}
 
 

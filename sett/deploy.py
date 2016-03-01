@@ -29,7 +29,7 @@ def etc():
     """
     call_task('nginx_conf')
     call_task('monit_conf')
-    call_task('uwsgi_xml')
+    call_task('uwsgi_conf')
 
 
 @task
