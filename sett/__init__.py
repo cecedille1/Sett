@@ -20,6 +20,7 @@ from paver.tasks import environment, Task
 __version__ = '0.11.1'
 
 __all__ = [
+    'on_init',
     'which',
     'optional_import',
     'parallel',
@@ -93,7 +94,38 @@ class SettModule(object):
         self.__dict__[attr] = value
 
 
-def init():
+class Initializer(object):
+    def __init__(self, environment):
+        self.environment = environment
+        self._on_init_callbacks = []
+        self._initialized = False
+
+    def wrap(self, fn):
+        def inner_initializer_wrap(*args, **kw):
+            self()
+            return fn(*args, **kw)
+        return inner_initializer_wrap
+
+    def on_init(self, fn):
+        self._on_init_callbacks.append(fn)
+        return fn
+
+    def __call__(self):
+        if self._initialized:
+            return
+        for fn in self:
+            fn(self.environment)
+
+    def __iter__(self):
+        return iter(self._on_init_callbacks)
+
+
+_initializer = Initializer(environment)
+on_init = _initializer.on_init
+
+
+@_initializer.on_init
+def init(environment):
     """
     Initialize the paver
     """
@@ -102,6 +134,7 @@ def init():
     environment.defaults = defaults
     environment.deployment = DeployContext
     environment.which = which
+    environment.on_init = on_init
     environment.task_finders.extend([
         TaskAlternativeTaskFinder(loader, task_alternative),
         SettTaskFinder(loader),
@@ -115,15 +148,7 @@ def init():
 
 def install_init():
     import paver.tasks
-    initialized = False
-    super_process_commands = paver.tasks._process_commands
-
-    def _process_commands(*args, **kw):
-        if not initialized:
-            init()
-        super_process_commands(*args, **kw)
-
-    paver.tasks._process_commands = _process_commands
+    paver.tasks._process_commands = _initializer.wrap(paver.tasks._process_commands)
 
 
 sys.modules['sett'] = SettModule(sys.modules['sett'])
