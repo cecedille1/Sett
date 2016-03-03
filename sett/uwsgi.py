@@ -5,6 +5,7 @@ import sys
 from xml.etree import ElementTree as ET
 
 from paver.easy import task, info, path, debug
+from paver.deps.six import text_type
 
 from sett import which, ROOT, defaults, optional_import
 from sett.daemon import Daemon, daemon_task
@@ -55,7 +56,7 @@ def log_dir():
 
 def Element(tag, text):
     el = ET.Element(tag)
-    el.text = text
+    el.text = text_type(text)
     return el
 
 
@@ -78,7 +79,7 @@ def uwsgi_conf():
     config = {
         'module': '{}:{}'.format(module, name),
         'logto': LOGS.joinpath('uwsgi.log'),
-        'processes': str(context['uwsgi.processes']),
+        'processes': context['uwsgi.processes'],
         'home': VENV_DIR,
         'env': context['env'],
         'pythonpath': context['pythonpath'],
@@ -149,7 +150,7 @@ def YMLOutput(config, output):
     yaml.add_representer(path, literal_presenter)
 
     with open(output, 'w') as ostream:
-        yaml.dump(config, ostream, default_flow_style=False)
+        yaml.dump({'uwsgi': config}, ostream, default_flow_style=False)
 
 
 @WSGIOutput.provider
