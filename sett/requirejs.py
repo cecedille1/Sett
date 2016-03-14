@@ -31,15 +31,15 @@ build or will have to autodiscover it. If it exists, it will check againt a
 version for update since the last build. When no such update have been found,
 it will skip the build.
 
-The RJSBuilder takes a *defaults* dict. This options customize the building of
+The RJSBuilder takes a *params* dict. This options customize the building of
 the module and the arguments passed to r.js Those options may be intercepted by
 RJSBuilder or RJSBuild, for instance *appdir* sets the directory in which the
 autodiscovery takes place.  Else the list of options is passed to rjs.
 
-The options can be given by setting the `rjs_defaults` keyword of ``call_task``
+The options can be given by setting the `rjs_params` keyword of ``call_task``
 or with ``-o``in the CLI or by settings defaults.RJS_PARAMS
 
->>> call_task('rjs', options={'rjs_defaults': {'preserveLicenseComments': 'false'}})
+>>> call_task('rjs', options={'rjs_params': {'preserveLicenseComments': 'false'}})
 
     $ paver rjs -o preserveLicenseComments=false
 """
@@ -63,7 +63,7 @@ class RJSBuild(object):
     """
     A wrapper arround a r.js command. It takes the requirejs *name* of the
     module to build, the *source* directory, the *out* directory, and a dict of
-    *defaults* for the r.js command.
+    *params* for the r.js command.
 
     A list of the file used to build is written in a file name
     ``.*name*.files`` next to the file generated in *out*. This list of files
@@ -72,13 +72,13 @@ class RJSBuild(object):
 
     **Note**: The file loaded by the plugins are not checked.
     """
-    def __init__(self, name, source, out, defaults, cache):
+    def __init__(self, name, source, out, params, cache):
         self.name = name
         self.source = path(source)
         self.out = path(out)
-        self.defaults = dict(defaults)
+        self.params = dict(params)
         self.cache = cache
-        self.config_js = self.source.joinpath(self.defaults.pop('mainConfigFile', 'config.js'))
+        self.config_js = self.source.joinpath(self.params.pop('mainConfigFile', 'config.js'))
 
     def __repr__(self):
         return '{self.__class__.__name__}({self.name}: {self.source}->{self.out})'.format(
@@ -120,7 +120,7 @@ class RJSBuild(object):
             baseUrl=self.source,
             mainConfigFile=self.config_js,
             out=self.out,
-            **self.defaults
+            **self.params
         )
         debug('Running: %s', ' '.join(command))
         rjs_process = subprocess.Popen(
@@ -241,14 +241,14 @@ class RJSBuilder(object):
     >>> rjsb = RJSBuilder(ROOT.joinpath('build/js'))
     """
 
-    def __init__(self, outdir, force=False, build_class=AlmondRJSBuild, defaults=()):
+    def __init__(self, outdir, force=False, build_class=AlmondRJSBuild, params=()):
         self.outdir = outdir
         self.force = force
         self.build_class = build_class
-        self.defaults = self.get_defaults()
-        self.defaults.update(defaults)
+        self.params = self.get_params()
+        self.params.update(params)
 
-    def get_defaults(self):
+    def get_params(self):
         """
         Returns a list of default values.
         """
@@ -275,18 +275,18 @@ class RJSBuilder(object):
         """
         Returns a list of  ``RJSBuild`` instances for the given modules.
         """
-        defaults = dict(self.defaults)
-        defaults.pop('appdir', None)
+        params = dict(self.params)
+        params.pop('appdir', None)
 
         for name in args:
             out = ROOT.joinpath(self.outdir, name + '.js')
             cache = FilesListComparator(out)
-            yield self.build_class(name, source, out, defaults, cache)
+            yield self.build_class(name, source, out, params, cache)
 
     def __call__(self, tempdir, args):
         if not args:
             # Auto discover
-            args = self.autodiscover(tempdir, self.defaults.get('appdir', 'app'))
+            args = self.autodiscover(tempdir, self.params.get('appdir', 'app'))
         else:
             debug('Filtered args: %s', args)
 
@@ -333,7 +333,7 @@ def _cls(options, key, default):
     ),
     optparse.make_option(
         '-o', '--option',
-        dest='rjs_defaults',
+        dest='rjs_params',
         action='append',
         default=[],
     ),
@@ -361,7 +361,7 @@ their namespace. This behavior can be configured in a new builder class.
 
     rjs_params = dict(defaults.RJS_PARAMS)
 
-    command_params = getattr(options, 'rjs_defaults', {})
+    command_params = getattr(options, 'rjs_params', {})
     if not isinstance(command_params, dict):
         command_params = [x.split('=', 1) for x in command_params]
     rjs_params.update(command_params)
@@ -374,7 +374,7 @@ their namespace. This behavior can be configured in a new builder class.
         force=options.get('force', False),
         outdir=outdir,
         build_class=BuildClass,
-        defaults=rjs_defaults,
+        params=rjs_params,
     )
 
     with Tempdir() as tempdir:
