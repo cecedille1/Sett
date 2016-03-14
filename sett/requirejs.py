@@ -37,7 +37,7 @@ RJSBuilder or RJSBuild, for instance *appdir* sets the directory in which the
 autodiscovery takes place.  Else the list of options is passed to rjs.
 
 The options can be given by setting the `rjs_defaults` keyword of ``call_task``
-or with ``-o``in the CLI.
+or with ``-o``in the CLI or by settings defaults.RJS_PARAMS
 
 >>> call_task('rjs', options={'rjs_defaults': {'preserveLicenseComments': 'false'}})
 
@@ -119,7 +119,6 @@ class RJSBuild(object):
         command = self.get_command(
             baseUrl=self.source,
             mainConfigFile=self.config_js,
-            optimize=defaults.RJS_OPTIMIZE,
             out=self.out,
             **self.defaults
         )
@@ -253,12 +252,7 @@ class RJSBuilder(object):
         """
         Returns a list of default values.
         """
-        return {
-            'generateSourceMaps': 'true',
-            'preserveLicenseComments': 'false',
-            'skipDirOptimize': 'false',
-            'wrap': 'true',
-        }
+        return {}
 
     def _build(self, rjs_build):
         if self.force or rjs_build.should_build():
@@ -365,9 +359,12 @@ their namespace. This behavior can be configured in a new builder class.
     outdir = ROOT.joinpath(defaults.RJS_BUILD_DIR)
     outdir.makedirs()
 
-    rjs_defaults = getattr(options, 'rjs_defaults', {})
-    if not isinstance(options.rjs_defaults, dict):
-        rjs_defaults = dict(x.split('=') for x in rjs_defaults)
+    rjs_params = dict(defaults.RJS_PARAMS)
+
+    command_params = getattr(options, 'rjs_defaults', {})
+    if not isinstance(command_params, dict):
+        command_params = [x.split('=', 1) for x in command_params]
+    rjs_params.update(command_params)
 
     Builder = _cls(options, 'builder', RJSBuilder)
     BuildClass = _cls(options, 'build_class', AlmondRJSBuild)

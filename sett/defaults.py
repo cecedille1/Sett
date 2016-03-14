@@ -52,7 +52,14 @@ TESTS_NAMING_STRATEGY = None
 
 
 RJS_BUILD_DIR = 'build/static/js'
-RJS_OPTIMIZE = 'uglify2'
+RJS_PARAMS = {
+    'optimize': 'uglify2',
+    'generateSourceMaps': 'true',
+    'preserveLicenseComments': 'false',
+    'skipDirOptimize': 'false',
+    'mainConfigFile': 'config.js',
+    'wrap': 'true',
+}
 
 
 DEPLOY_TEMPLATES_DIR = 'sett-templates'
