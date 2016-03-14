@@ -76,20 +76,14 @@ class RJSBuild(object):
         self.name = name
         self.source = path(source)
         self.out = path(out)
-        self.defaults = defaults
+        self.defaults = dict(defaults)
         self.cache = cache
+        self.config_js = self.source.joinpath(self.defaults.pop('mainConfigFile', 'config.js'))
 
     def __repr__(self):
         return '{self.__class__.__name__}({self.name}: {self.source}->{self.out})'.format(
             self=self,
         )
-
-    @property
-    def config_js(self):
-        """
-        The path to the config.js file.
-        """
-        return self.source.joinpath(defaults.RJS_CONFIG)
 
     def get_command(self, **kw):
         """

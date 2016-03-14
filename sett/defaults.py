@@ -52,7 +52,6 @@ TESTS_NAMING_STRATEGY = None
 
 
 RJS_BUILD_DIR = 'build/static/js'
-RJS_CONFIG = 'config.js'
 RJS_OPTIMIZE = 'uglify2'
 
 
