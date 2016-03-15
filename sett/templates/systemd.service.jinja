@@ -4,6 +4,7 @@ Description=Application Daemon for {{ NAME }}
 After=network.target
 
 [Service]
+WorkingDirectory={{ROOT}}
 ExecStart={{ctl}} run
 {% if systemd.KillSignal %}
 KillSignal={{systemd.KillSignal}}
