@@ -125,8 +125,8 @@ class MetaDispatcher(type):
         for attr in attrs.values():
             if isinstance(attr, types.FunctionType):
                 events = attr.__dict__.pop('callbacks', [])
-                for command, priority in events:
-                    heapq.heappush(callbacks[command], (priority, -next(counter), attr))
+                for command, priority, counter in events:
+                    heapq.heappush(callbacks[command], (priority, counter, attr))
         return callbacks
 
     @classmethod
@@ -176,7 +176,7 @@ class BaseDispatcher(with_metaclass(MetaDispatcher)):
         """
         def decorator(fn):
             assert priority != 0
-            fn.__dict__.setdefault('callbacks', []).append((command, priority))
+            fn.__dict__.setdefault('callbacks', []).append((command, priority, next(counter)))
             return fn
         return decorator
 
