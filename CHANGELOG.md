@@ -1,5 +1,24 @@
 ## Unreleased
 
+
+## 0.11.2 (2016-03-15)
+
+### Refactoring
+
+- In rjs, defaults is now named params. Defaults are unified in a dict. Some
+  extenal defaults are moved inside this dict.
+- rjs build class and builder are found in the defaults
+
+### Features
+
+- New decorator @on_init to add initialization function
+
+### Bugfixes
+
+- YML generation for uwsgi
+- Workdir is not set when generating systemd.service
+- Bug when using GitInstall
+
 ## 0.11.1 (2016-03-01)
 
 ###Features
