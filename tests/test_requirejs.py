@@ -113,7 +113,6 @@ class TestRJSBuild(unittest.TestCase):
         get_command.assert_called_once_with(
             baseUrl='/abc/def',
             mainConfigFile='/abc/def/config.js',
-            optimize='uglify2',
             out='/ghi/out.js',
             abcd='efgh',
         )
