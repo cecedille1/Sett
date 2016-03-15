@@ -300,14 +300,14 @@ class RJSBuilder(object):
 
 
 def _cls(options, key, default):
-    if not options.get(key):
-        return default
-    if isinstance(options.build_class, string_types):
-        return import_string(options.build_class)
-    if callable(options.build_class):
-        return options.build_class
+    cls_def = options.get('key') or getattr(defaults, 'RJS_{}'.format(key.upper()), None) or default
 
-    raise TypeError('Invalid {} class: {}'.format(key, options.get(key)))
+    if isinstance(cls_def, string_types):
+        cls_def = import_string(cls_def)
+    if not callable(cls_def):
+        raise TypeError('Invalid {} class: {}'.format(key, options.get(key)))
+
+    return cls_def
 
 
 @task
