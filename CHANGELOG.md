@@ -1,5 +1,10 @@
 ## Unreleased
 
+## 0.11.3 (2016-03-15)
+
+### Bugfixes
+
+- rjs will honor build and builder options
 
 ## 0.11.2 (2016-03-15)
 

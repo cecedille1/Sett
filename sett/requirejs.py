@@ -300,7 +300,7 @@ class RJSBuilder(object):
 
 
 def _cls(options, key, default):
-    cls_def = options.get('key') or getattr(defaults, 'RJS_{}'.format(key.upper()), None) or default
+    cls_def = options.get(key) or getattr(defaults, 'RJS_{}'.format(key.upper()), None) or default
 
     if isinstance(cls_def, string_types):
         cls_def = import_string(cls_def)
