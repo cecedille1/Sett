@@ -29,7 +29,9 @@ class Git(object):
         return self('clone', '--depth', str(depth), repo, target)
 
     def __call__(self, *args):
-        return sh([which.git] + args)
+        cmd = [which.git]
+        cmd.extend(args)
+        return sh(cmd)
 
 
 class GitInstall(object):
