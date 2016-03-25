@@ -249,8 +249,10 @@ class BaseSass(object):
             self._build_all()
 
     def _build_file(self, filename):
-        kwargs = self.get_compile_kwargs()
+        if path(filename).basename().startswith('_'):
+            return
 
+        kwargs = self.get_compile_kwargs()
         infile = self._src.joinpath(filename)
         try:
             result = libsass.compile(filename=infile, **kwargs)
