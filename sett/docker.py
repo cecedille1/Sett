@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-from paver.easy import task, consume_nargs, debug, info, environment
+from paver.easy import task, consume_nargs, debug, info, environment, error
 
 from sett.utils import optional_import, task_name as rename_task
+from sett.task_loaders import RegexpTaskLoader
 docker = optional_import('docker', 'docker-py')
 
 
@@ -65,19 +66,6 @@ def docker_started(args):
         c.start()
 
 
-def docker_started_task(container_name, alias=None, task_name=None):
-    @task
-    @rename_task(task_name or container_name)
-    def start_docker():
-        c = Container(container_name)
-
-        if not c.is_started():
-            c.start()
-        os.environ.update(c.environ(alias))
-
-    return start_docker
-
-
 def docker_environment(container_inspect, alias=None, ignore_env={'PATH'}):
     name = (alias or container_inspect['Name'].lstrip('/')).upper()
     environ = {}
@@ -107,14 +95,32 @@ def docker_environment(container_inspect, alias=None, ignore_env={'PATH'}):
     return environ
 
 
-if docker:
-    from sett.task_loaders import RegexpTaskLoader
-    environment.task_finders.append(
-        RegexpTaskLoader(
-            r'^docker\('
-            '(\w+)'  # Matches the container name
-            '(?::(\w+))?'  # Matches the eventual alias
-            '\)$',
-            docker_started_task,
-        )
+def docker_started_task(container_name, alias=None, task_name=None):
+    if not docker:
+        @task
+        @rename_task(task_name or container_name)
+        def docker_wrapper():
+            error('Task %s requires docker but it is not installed', task_name)
+            docker()  # Triggers the runtime error
+        return docker_wrapper
+
+    @task
+    @rename_task(task_name or container_name)
+    def start_docker():
+        c = Container(container_name)
+
+        if not c.is_started():
+            c.start()
+        os.environ.update(c.environ(alias))
+    return start_docker
+
+
+environment.task_finders.append(
+    RegexpTaskLoader(
+        r'^docker\('
+        '(\w+)'  # Matches the container name
+        '(?::(\w+))?'  # Matches the eventual alias
+        '\)$',
+        docker_started_task,
     )
+)
