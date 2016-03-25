@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Features
+
+- loaddata will try really harder to insert all the models
+
+### Bugfixes
+
+- File change events occuring in the Sass watcher will only trigger rebuild of
+  sass files having included this file.
+- When requiring a docker(container) task and docker is not installed, the
+  error message is more explicit
+
 ## 0.11.3 (2016-03-15)
 
 ### Bugfixes
