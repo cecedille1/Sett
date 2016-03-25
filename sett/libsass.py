@@ -174,10 +174,24 @@ class Watcher(object):
         self.stop()
 
 
+class DependencyTracker(object):
+    def __init__(self):
+        self._deps = set()
+
+    def __contains__(self, file):
+        return file in self._deps
+
+    def __call__(self, import_string):
+        self._deps.add(import_string)
+        return [(import_string, )]
+
+
 class BaseSass(object):
     @classmethod
     def get_default_paths(self):
         sp = defaults.SASS_PATH
+        if not sp:
+            return []
         if isinstance(sp, string_types):
             return sp.split(':')
         if isinstance(sp, collections.Iterable):
@@ -218,11 +232,13 @@ class BaseSass(object):
     def __init__(self, src, dest, include_paths, functions):
         self._src = src
         self._dest = dest
-        self._deps = set()
-        self._paths = [
-            self._src,
-        ] + include_paths
+        self._deps = {}
         self._functions = functions
+
+        paths = [self._src]
+        paths.extend(include_paths)
+        # Ensure trailing slashes so it does not mess with deps computation
+        self._paths = [os.path.join(p, '') for p in paths]
 
     @property
     def paths(self):
@@ -237,28 +253,52 @@ class BaseSass(object):
 
     def get_compile_kwargs(self):
         return {
+            'importers': [],
             'output_style': defaults.SASS_OUTPUT_STYLE,
             'custom_functions': self._functions,
             'include_paths': self._paths,
         }
 
     def __call__(self, filename=None):
-        if filename is not None:
-            self._build_file(filename)
-        else:
+        if filename is None:
             self._build_all()
-
-    def _build_file(self, filename):
-        if path(filename).basename().startswith('_'):
             return
 
+        filename = path(filename)
+        if filename.basename().startswith('_'):
+            if not self._deps:
+                self._build_all()
+                return
+
+            dep_names = {
+                os.path.join(filename.dirname()[len(p):], filename.basename().stripext().lstrip('_'))
+                for p in self._paths
+                if filename.startswith(p)
+            }
+
+            if not dep_names:
+                return
+
+            for main_file, deps in self._deps.items():
+                if any(dep_name in deps for dep_name in dep_names):
+                    self._build_file(main_file)
+            return
+
+        self._build_file(filename)
+
+    def _build_file(self, filename):
         kwargs = self.get_compile_kwargs()
+        dep_tracker = DependencyTracker()
+        kwargs['importers'].append((0, dep_tracker))
+
         infile = self._src.joinpath(filename)
         try:
             result = libsass.compile(filename=infile, **kwargs)
         except Exception as e:
             error('Cannot build %s: %s', infile, e)
             raise
+
+        self._deps[infile] = dep_tracker
         relative_infile = os.path.relpath(infile, self._src)
 
         outfile = self._dest.joinpath(relative_infile).stripext() + '.css'
