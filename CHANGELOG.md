@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.11.4 (2016-03-31)
+
 ### Features
 
 - loaddata will try really harder to insert all the models
